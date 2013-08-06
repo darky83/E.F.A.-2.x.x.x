@@ -1,5 +1,7 @@
-E.F.A. 2.x.x.x
-==============
+<p align="center" >
+  <img src="http://www.efa-project.org/wp-content/uploads/2012/10/logo-2-55px.png" alt="EFA" title="EFA">
+</p>
+
 
 E.F.A stands for Email Filter Appliance.
 E.F.A is born out of a need for a cost-effective email virus & spam scanning solution after the ESVA project died.

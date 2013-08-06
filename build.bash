@@ -42,6 +42,7 @@ dlurl="http://dl.efa-project.org/build/$version"		# URL for file downloads
 builddir="/usr/src/EFA"									# E.F.A. Build dir
 logdir="/var/log/EFA"									# E.F.A. Log dir
 home="/home/baruwa"										# Baruwa home
+debug="0"												# Enable/Disable Debug
 # +---------------------------------------------------+
 # Disclaimer
 # +---------------------------------------------------+
@@ -52,6 +53,8 @@ echo "TODO TODO TODO TODO TODO TODO TODO"
 echo "TODO TODO TODO TODO TODO TODO TODO"
 echo "TODO TODO TODO TODO TODO TODO TODO"
 echo "TODO TODO TODO TODO TODO TODO TODO"
+
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -60,19 +63,24 @@ echo "TODO TODO TODO TODO TODO TODO TODO"
 # +---------------------------------------------------+
 func_checkos () {
 
+echo "[EFA] Checking Debian Version"
 if [ -f "/etc/debian_version" ]
 	then
 		if [ ! `cat /etc/debian_version` == "$debianv" ]
 			then
 				echo "[EFA] Error you do not seem to be running Debian $debianv."
 				echo "[EFA] Debian $debianv is required to continue this build."
+				if [$debug == "1" ]; then pause; fi
 				exit 0
 		fi
 	else
 		echo "[EFA] Error you do not seem to be running an Debian OS."
 		echo "[EFA] Please see http://www.efa-project.org for more info."
+		if [$debug == "1" ]; then pause; fi
 		exit 0
 fi
+
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -80,6 +88,8 @@ fi
 # Pre requirements
 # +---------------------------------------------------+
 func_prerequirements () {
+
+echo "[EFA] Checking Pre-Requirements"
 # Apt settings for noexec /tmp dir
 echo 'DPkg:Pre-Invoke{"mount -o remount,exec /tmp";};' >> /etc/apt/apt.conf
 echo 'DPkg:Post-Invoke {"mount -o remount /tmp";};' >> /etc/apt/apt.conf
@@ -91,6 +101,8 @@ update-rc.d -f portmap remove
 
 # Secure SSH
 sed -i '/^PermitRootLogin/ c\PermitRootLogin no' /etc/ssh/sshd_config
+
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -99,6 +111,7 @@ sed -i '/^PermitRootLogin/ c\PermitRootLogin no' /etc/ssh/sshd_config
 # +---------------------------------------------------+
 func_efarequirements () {
 
+echo "[EFA] Configuring E.F.A Requirements"
 echo "EFA-$version" >> /etc/EFA-Version
 cd /usr/local/sbin
 wget $dlurl/EFA-Init
@@ -130,6 +143,8 @@ sed -i '1i\\/usr\/local\/sbin\/EFA-Init' /root/.bashrc
 cd /etc/cron.monthly
 wget $dlurl/EFA-Monthly-cron
 chmod 700 EFA-Monthly-cron
+
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -138,6 +153,7 @@ chmod 700 EFA-Monthly-cron
 # +---------------------------------------------------+
 func_cleanup () {
 
+echo "[EFA] Starting Cleanup"
 # Clean SSH keys (gererate at first boot)
 /bin/rm /etc/ssh/ssh_host_*
 
@@ -159,6 +175,7 @@ echo "127.0.0.1               localhost efa" > /etc/hosts
 # Clean history
 rm /home/efaadmin/.bash_history
 rm /root/.bash_history
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -167,18 +184,19 @@ rm /root/.bash_history
 # +---------------------------------------------------+
 func_dependencies () {
 
+echo "[EFA] Install and configuring dependencies"
 export DEBIAN_FRONTEND='noninteractive'
 
-echo "Installing Baruwa repo."
-wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
-echo "deb http://apt.baruwa.org/debian wheezy main" >> /etc/apt/sources.list
-apt-get update
+#echo "Installing Baruwa repo."
+#wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
+#echo "deb http://apt.baruwa.org/debian wheezy main" >> /etc/apt/sources.list
 
+apt-get update
 apt-get -y install gcc g++ git subversion curl patch sudo
 apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
 apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs apparmor libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo python-babel
 apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
-
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -186,11 +204,13 @@ apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl l
 # Install and Configure dnsmasq
 # +---------------------------------------------------+
 func_dnsmasq (){
+echo "[EFA] Installing dnsmasq"
 apt-get -y install dnsmasq
 sed -i s/"#listen-address="/"listen-address=127.0.0.1"/ /etc/dnsmasq.conf
 echo -e "# IPv6 \nnet.ipv6.conf.all.disable_ipv6 = 1 \nnet.ipv6.conf.default.disable_ipv6 = 1 \nnet.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
 sysctl -p -q
 service dnsmasq restart
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -199,6 +219,7 @@ service dnsmasq restart
 # +---------------------------------------------------+
 func_baruwa (){
 
+echo "[EFA] Installing Baruwa"
 mkdir -p $home && cd $home
 virtualenv --distribute px
 source px/bin/activate
@@ -222,6 +243,7 @@ cd $home
 curl -O $dlurl/m2crypto.sh
 chmod +x m2crypto.sh
 ./m2crypto.sh
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -230,6 +252,7 @@ chmod +x m2crypto.sh
 # +---------------------------------------------------+
 func_postgresql () {
 
+echo "[EFA] Configuring Postgresql"
 cat > /etc/postgresql/9.1/main/pg_hba.conf << 'EOF'
 # TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
 local   all         postgres                          trust
@@ -254,6 +277,7 @@ curl -O $dlurl/sphinx.conf
 #indexer --all --rotate
 #service sphinxsearch start
 cd $home
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -262,12 +286,14 @@ cd $home
 # +---------------------------------------------------+
 func_rabbitmq () {
 
+echo "[EFA] Configuring RabbitMQ"
 apt-get -y install rabbitmq-server
 
 rabbitmqctl delete_user guest
 rabbitmqctl add_user baruwa password
 rabbitmqctl add_vhost baruwa
 rabbitmqctl set_permissions -p baruwa baruwa ".*" ".*" ".*"
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -275,6 +301,8 @@ rabbitmqctl set_permissions -p baruwa baruwa ".*" ".*" ".*"
 # Install and Configure Mailscanner
 # +---------------------------------------------------+
 func_mailscanner () {
+
+echo "[EFA] Installing and configuring Mailscanner"
 
 apt-get -y install mailscanner exim4-daemon-heavy
 cd $home
@@ -319,6 +347,7 @@ su - postgres -c "psql -c\"create database sa_bayes owner sa_user;\""
 su - postgres -c "psql -d sa_bayes -U sa_user -c \"\i /usr/share/doc/spamassassin/sql/bayes_pg.sql;\""
 	
 service postgresql restart
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -326,6 +355,8 @@ service postgresql restart
 # Configure Exim
 # +---------------------------------------------------+
 func_exim () {
+
+echo "[EFA] Configuring Exim"
 cat > /etc/sudoers.d/baruwa << 'EOF'
 Defaults:baruwa   !requiretty, visiblepw
 
@@ -355,6 +386,7 @@ curl -O $dlurl/exim-bcrypt.pl
 
 usermod -a -G Debian-exim clamav
 service exim4 start
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -362,7 +394,9 @@ service exim4 start
 # Install Perl Modules
 # +---------------------------------------------------+
 func_perl () {
+echo "[EFA] Installing Perl Modules"
 yes | perl -MCPAN -e "CPAN::Shell->force(qw(install Mail::SPF::Query Digest::SHA1 Parse::RecDescent SAVI Test::Manifest YAML Business::ISBN Data::Dump Encoding::FixLatin AnyEvent::Handle EV IP::Country::Fast Encode::Detect Crypt::OpenSSL::RSA));"
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -371,6 +405,7 @@ yes | perl -MCPAN -e "CPAN::Shell->force(qw(install Mail::SPF::Query Digest::SHA
 # +---------------------------------------------------+
 func_baruwa_config (){
 
+echo "[EFA] Configuring Baruwa"
 cd $home
 virtualenv --distribute px
 source px/bin/activate
@@ -420,7 +455,7 @@ cd $home/px/lib/python2.7/site-packages/baruwa/controllers/
 curl -O $dlurl/taskids.sh
 chmod +x taskids.sh
 ./taskids.sh
-
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -428,6 +463,7 @@ chmod +x taskids.sh
 # Install and configure nginx
 # +---------------------------------------------------+
 func_nginx () {
+echo "[EFA] Install and configure nginx"
 cd $home
 apt-get -y install nginx uwsgi uwsgi-plugin-python
 curl -O $dlurl/nginx.conf
@@ -437,13 +473,16 @@ sed -i '/daemonize/ahome = /home/baruwa/px' /etc/baruwa/production.ini
 sed -i '/home/apaste = config:/etc/baruwa/production.ini' /etc/baruwa/production.ini
 sed -i '/paste/achmod-socket = 666' /etc/baruwa/production.ini
 ln -s /etc/baruwa/production.ini /etc/uwsgi/apps-enabled/
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
 # Install and configure Pyzor, Razor and DCC
 # +---------------------------------------------------+
-func_nginx () {
+func_pyzor_razor_dcc () {
+
+echo "[EFA] Install and configure Pyzor, Razor and DCC"
 apt-get -y install razor pyzor
 pyzor --homedir=/var/lib/MailScanner discover
 pyzor ping
@@ -480,6 +519,7 @@ curl $dlurl/DCC.init -o /etc/init.d/DCC
 chmod 755 /etc/init.d/DCC
 update-rc.d DCC defaults
 service DCC start
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -488,6 +528,7 @@ service DCC start
 # +---------------------------------------------------+
 func_cron () {
 
+echo "[EFA] Setting Cron Jobs"
 curl $dlurl/cron.baruwa-updateindex -o /etc/cron.hourly/baruwa-updateindex
 chmod +x /etc/cron.hourly/baruwa-updateindex
 curl $dlurl/cron.baruwa -o /etc/cron.d/baruwa
@@ -500,6 +541,7 @@ curl $dlurl/update_bad_phishing_sites -o /usr/sbin/update_bad_phishing_sites
 chmod +x /usr/sbin/update_bad_phishing_sites
 curl $dlurl/update_bad_phishing_emails -o /usr/sbin/update_bad_phishing_emails
 chmod +x /usr/sbin/update_bad_phishing_emails
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -527,6 +569,7 @@ service apparmor restart &> /dev/null
 freshclam
 service clamav-daemon restart
 /usr/sbin/clamav-unofficial-sigs
+if [$debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -539,6 +582,15 @@ fn_generate_key () {
 fn_clear
 }
 # +---------------------------------------------------+
+
+# +---------------------------------------------------+
+# Pause
+# +---------------------------------------------------+
+pause(){
+	read -p "Press [Enter] key to continue..." fackEnterKey
+}
+# +---------------------------------------------------+
+
 
 # +---------------------------------------------------+
 # Main logic
@@ -559,7 +611,7 @@ if [ `whoami` == root ]
 		func_pyzor_razor_dcc
 		func_cron
 		func_services
-		func_cleanup
+		#func_cleanup
 		#reboot
 	else
 		echo "[EFA] ERROR: Please become root."

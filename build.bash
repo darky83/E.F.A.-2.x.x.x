@@ -159,8 +159,7 @@ echo "[EFA] Starting Cleanup"
 # Clean SSH keys (gererate at first boot)
 /bin/rm /etc/ssh/ssh_host_*
 
-# Disable all services untill we are configured
-
+# Disable all services untill we are configured (EFA-Init)
 update-rc.d exim4 remove
 update-rc.d sphinxsearch remove
 update-rc.d uwsgi remove
@@ -173,6 +172,7 @@ update-rc.d DCC remove
 update-rc.d postgresql remove
 update-rc.d clamav-freshclam remove
 update-rc.d clamav-daemon remove
+update-rc.d mailscanner remove
 #/etc/init.d/clamav-freshclam start
 #/etc/init.d/clamav-daemon start
 #/etc/init.d/postgresql start
@@ -185,6 +185,7 @@ update-rc.d clamav-daemon remove
 #/etc/init.d/nginx start
 #/etc/init.d/sphinxsearch start
 #/etc/init.d/exim4 start
+#/etc/init.d/mailscanner start
 
 # Clean network configs
 rm /var/cache/apt/archives/*
@@ -192,7 +193,8 @@ echo "auto lo" > /etc/network/interfaces
 echo "iface lo inet loopback" >> /etc/network/interfaces
 echo " " >> /etc/network/interfaces
 echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 8.8.8.8" > /etc/resolv.
+echo "nameserver 8.8.4.4" >> /etc/resolv.conf
 echo "127.0.0.1               localhost efa" > /etc/hosts
 
 echo "auto eth0" > /etc/network/interfaces.d/eth0
@@ -201,6 +203,10 @@ echo "iface eth0 inet dhcp" >> /etc/network/interfaces.d/eth0
 # Clean history
 rm /home/efaadmin/.bash_history
 rm /root/.bash_history
+
+# Clean logs
+rm -r /var/log/exim4/*
+
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
@@ -604,10 +610,9 @@ if [ $debug == "1" ]; then pause; fi
 # +---------------------------------------------------+
 # Generate Key's
 # +---------------------------------------------------+
-fn_generate_key () {
+func_generate_key () {
         openssl req -x509 -newkey rsa:2048 -days 9999 -nodes -x509 -subj "/C=$sslcountry/ST=$sslprovince/L=$sslcity/O=$orgname/CN=$baruwadomain" -keyout baruwa.key -out baruwa.pem -nodes
         mkdir /etc/pki && mkdir /etc/pki/baruwa && mv baruwa.* /etc/pki/baruwa/
-fn_clear
 }
 # +---------------------------------------------------+
 
@@ -634,6 +639,9 @@ if [ `whoami` == root ]
 		func_baruwa
 		func_postgresql
 		func_rabbitmq
+		func_mailscanner
+		func_perl
+		func_exim
 		func_baruwa_config
 		func_nginx
 		func_pyzor_razor_dcc

@@ -1,6 +1,6 @@
 #!/bin/bash
 # +--------------------------------------------------------------------+
-# EFA 2.0.0.1 build script version 20130730
+# EFA 2.0.0.1 build script version 20130807
 # +--------------------------------------------------------------------+
 # Copyright (C) 2012~2013  http://www.efa-project.org
 #
@@ -42,7 +42,9 @@ dlurl="http://dl.efa-project.org/build/$version"		# URL for file downloads
 builddir="/usr/src/EFA"									# E.F.A. Build dir
 logdir="/var/log/EFA"									# E.F.A. Log dir
 home="/home/baruwa"										# Baruwa home
-debug="0"												# Enable/Disable Debug
+pythonv="2.7"											# Python version to use
+password="EfaPr0j3ct"									# Default password (should not be changed!)
+debug="1"												# Enable/Disable Debug
 # +---------------------------------------------------+
 # Disclaimer
 # +---------------------------------------------------+
@@ -54,7 +56,7 @@ echo "TODO TODO TODO TODO TODO TODO TODO"
 echo "TODO TODO TODO TODO TODO TODO TODO"
 echo "TODO TODO TODO TODO TODO TODO TODO"
 
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -70,17 +72,17 @@ if [ -f "/etc/debian_version" ]
 			then
 				echo "[EFA] Error you do not seem to be running Debian $debianv."
 				echo "[EFA] Debian $debianv is required to continue this build."
-				if [$debug == "1" ]; then pause; fi
+				if [ $debug == "1" ]; then pause; fi
 				exit 0
 		fi
 	else
 		echo "[EFA] Error you do not seem to be running an Debian OS."
 		echo "[EFA] Please see http://www.efa-project.org for more info."
-		if [$debug == "1" ]; then pause; fi
+		if [ $debug == "1" ]; then pause; fi
 		exit 0
 fi
 
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -102,7 +104,7 @@ update-rc.d -f portmap remove
 # Secure SSH
 sed -i '/^PermitRootLogin/ c\PermitRootLogin no' /etc/ssh/sshd_config
 
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -114,11 +116,11 @@ func_efarequirements () {
 echo "[EFA] Configuring E.F.A Requirements"
 echo "EFA-$version" >> /etc/EFA-Version
 cd /usr/local/sbin
-wget $dlurl/EFA-Init
+wget -N $dlurl/EFA-Init
 chmod 700 EFA-Init
-wget $dlurl/EFA-Configure
+wget -N $dlurl/EFA-Configure
 chmod 700 EFA-Configure
-wget $dlurl/EFA-Update
+wget -N $dlurl/EFA-Update
 chmod 700 EFA-Update
 
 mkdir $builddir
@@ -134,17 +136,17 @@ echo "------------------------------" >> /etc/issue
 echo "  http://www.efa-project.org  " >> /etc/issue
 echo "------------------------------" >> /etc/issue
 echo "" >> /etc/issue
-echo "First time login: root/password" >> /etc/issue
+echo "First time login: root/EfaPr0j3ct" >> /etc/issue
 
 # Set EFA-Init to run at first root login:
 sed -i '1i\\/usr\/local\/sbin\/EFA-Init' /root/.bashrc
 
 # Monthly check for update
 cd /etc/cron.monthly
-wget $dlurl/EFA-Monthly-cron
+wget -N $dlurl/EFA-Monthly-cron
 chmod 700 EFA-Monthly-cron
 
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -158,10 +160,31 @@ echo "[EFA] Starting Cleanup"
 /bin/rm /etc/ssh/ssh_host_*
 
 # Disable all services untill we are configured
-echo "TODO TODO TODO TODO"
-echo "TODO TODO TODO TODO"
-echo "TODO TODO TODO TODO"
-echo "TODO TODO TODO TODO"
+
+update-rc.d exim4 remove
+update-rc.d sphinxsearch remove
+update-rc.d uwsgi remove
+update-rc.d nginx remove
+update-rc.d dnsmasq remove
+update-rc.d memcached remove
+update-rc.d baruwa remove
+update-rc.d rabbitmq-server remove
+update-rc.d DCC remove
+update-rc.d postgresql remove
+update-rc.d clamav-freshclam remove
+update-rc.d clamav-daemon remove
+#/etc/init.d/clamav-freshclam start
+#/etc/init.d/clamav-daemon start
+#/etc/init.d/postgresql start
+#/etc/init.d/DCC start
+#/etc/init.d/rabbitmq-server start
+#/etc/init.d/baruwa start
+#/etc/init.d/memcached start
+#/etc/init.d/dnsmasq start
+#/etc/init.d/uwsgi start
+#/etc/init.d/nginx start
+#/etc/init.d/sphinxsearch start
+#/etc/init.d/exim4 start
 
 # Clean network configs
 rm /var/cache/apt/archives/*
@@ -172,10 +195,13 @@ echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "127.0.0.1               localhost efa" > /etc/hosts
 
+echo "auto eth0" > /etc/network/interfaces.d/eth0
+echo "iface eth0 inet dhcp" >> /etc/network/interfaces.d/eth0
+
 # Clean history
 rm /home/efaadmin/.bash_history
 rm /root/.bash_history
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -187,16 +213,13 @@ func_dependencies () {
 echo "[EFA] Install and configuring dependencies"
 export DEBIAN_FRONTEND='noninteractive'
 
-#echo "Installing Baruwa repo."
-#wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
-#echo "deb http://apt.baruwa.org/debian wheezy main" >> /etc/apt/sources.list
-
 apt-get update
 apt-get -y install gcc g++ git subversion curl patch sudo
 apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
-apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs apparmor libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo python-babel
+apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim
 apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
-if [$debug == "1" ]; then pause; fi
+# python-babel apparmor
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -210,7 +233,7 @@ sed -i s/"#listen-address="/"listen-address=127.0.0.1"/ /etc/dnsmasq.conf
 echo -e "# IPv6 \nnet.ipv6.conf.all.disable_ipv6 = 1 \nnet.ipv6.conf.default.disable_ipv6 = 1 \nnet.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
 sysctl -p -q
 service dnsmasq restart
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -221,29 +244,29 @@ func_baruwa (){
 
 echo "[EFA] Installing Baruwa"
 mkdir -p $home && cd $home
-virtualenv --distribute px
+virtualenv -p /usr/bin/python$pythonv  --distribute px
 source px/bin/activate
 export SWIG_FEATURES="-cpperraswarn -includeall -D__`uname -m`__ -I/usr/include/openssl"
-curl -O $dlurl/requirements.txt
+wget -N $dlurl/requirements.txt
 pip install distribute
 pip install -U distribute
 pip install --timeout 60 -r requirements.txt
 
 
 cd $home
-curl $dlurl/sphinxapi.py -o px/lib/python2.7/site-packages/sphinxapi.py
-curl -O $dlurl/repoze.who-friendly-form.patch
-curl -O $dlurl/repoze-who-fix-auth_tkt-tokens.patch
+curl $dlurl/sphinxapi.py -o px/lib/python$pythonv/site-packages/sphinxapi.py
+wget -N $dlurl/repoze.who-friendly-form.patch
+wget -N $dlurl/repoze-who-fix-auth_tkt-tokens.patch
 
-cd px/lib/python2.7/site-packages/repoze/who/plugins/
+cd px/lib/python$pythonv/site-packages/repoze/who/plugins/
 patch -p3 -i $home/repoze.who-friendly-form.patch
 patch -p4 -i $home/repoze-who-fix-auth_tkt-tokens.patch
 cd $home
 
-curl -O $dlurl/m2crypto.sh
+wget -N $dlurl/m2crypto.sh
 chmod +x m2crypto.sh
 ./m2crypto.sh
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -265,19 +288,19 @@ sed -e "s/^#timezone = \(.*\)$/timezone = 'UTC'/" -i /etc/postgresql/9.1/main/po
 service postgresql restart
 
 cd $home
-su - postgres -c "psql postgres -c \"CREATE ROLE baruwa WITH LOGIN PASSWORD 'password';\""
+su - postgres -c "psql postgres -c \"CREATE ROLE baruwa WITH LOGIN PASSWORD '$password';\""
 su - postgres -c 'createdb -E UTF8 -O baruwa -T template1 baruwa'
 su - postgres -c "psql baruwa -c \"CREATE LANGUAGE plpythonu;\""
-curl -O $dlurl/admin-functions.sql
+wget -N $dlurl/admin-functions.sql
 su - postgres -c 'psql baruwa -f '$home'/admin-functions.sql'
 service postgresql restart
 sed -i -e 's:START=no:START=yes:' /etc/default/sphinxsearch
 cd /etc/sphinxsearch/
-curl -O $dlurl/sphinx.conf
-#indexer --all --rotate
-#service sphinxsearch start
+wget -N $dlurl/sphinx.conf
+
+service sphinxsearch start
 cd $home
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -290,10 +313,10 @@ echo "[EFA] Configuring RabbitMQ"
 apt-get -y install rabbitmq-server
 
 rabbitmqctl delete_user guest
-rabbitmqctl add_user baruwa password
+rabbitmqctl add_user baruwa $password
 rabbitmqctl add_vhost baruwa
 rabbitmqctl set_permissions -p baruwa baruwa ".*" ".*" ".*"
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -303,30 +326,33 @@ if [$debug == "1" ]; then pause; fi
 func_mailscanner () {
 
 echo "[EFA] Installing and configuring Mailscanner"
-
+#echo "Installing Baruwa repo for mailscanner."
+wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
+echo "deb http://apt.baruwa.org/debian wheezy main" >> /etc/apt/sources.list
+apt-get update
 apt-get -y install mailscanner exim4-daemon-heavy
 cd $home
-curl -O $dlurl/mailscanner-baruwa-iwantlint.patch
-curl -O $dlurl/mailscanner-baruwa-sql-config.patch
+wget -N $dlurl/mailscanner-baruwa-iwantlint.patch
+wget -N $dlurl/mailscanner-baruwa-sql-config.patch
 cd /usr/sbin
 patch -i $home/mailscanner-baruwa-iwantlint.patch
 cd /usr/share/MailScanner/MailScanner
 patch -p3 -i $home/mailscanner-baruwa-sql-config.patch
 cd $home
-curl -O $dlurl/BS.pm
+wget -N $dlurl/BS.pm
 mv BS.pm /etc/MailScanner/CustomFunctions/
 cd /etc/MailScanner
 mv MailScanner.conf MailScanner.conf.orig
 cd $home
-curl -O $dlurl/MailScanner.conf
-curl -O $dlurl/scan.messages.rules
-curl -O $dlurl/nonspam.actions.rules
-curl -O $dlurl/filename.rules
-curl -O $dlurl/filetype.rules
-curl -O $dlurl/filename.rules.allowall.conf
-curl -O $dlurl/filetype.rules.allowall.conf
+wget -N $dlurl/MailScanner.conf
+wget -N $dlurl/scan.messages.rules
+wget -N $dlurl/nonspam.actions.rules
+wget -N $dlurl/filename.rules
+wget -N $dlurl/filetype.rules
+wget -N $dlurl/filename.rules.allowall.conf
+wget -N $dlurl/filetype.rules.allowall.conf
 mv /etc/MailScanner/spam.assassin.prefs.conf /etc/MailScanner/spam.assassin.prefs.conf.orig
-curl -O $dlurl/spam.assassin.prefs.conf
+wget -N $dlurl/spam.assassin.prefs.conf
 mv *.rules /etc/MailScanner/rules/
 mv *.conf /etc/MailScanner/
 chmod -R 777 /var/spool/MailScanner/
@@ -342,12 +368,12 @@ chown -R Debian-exim:Debian-exim /var/spool/exim.in
 sed -i '20i{clamd}\         /bin/false\                              /usr/local ' /etc/MailScanner/virus.scanners.conf
 
 su - postgres -c "psql -c\"create role sa_user login;\""
-su - postgres -c "psql -c\"alter role sa_user password 'password';\""
+su - postgres -c "psql -c\"alter role sa_user password '$password';\""
 su - postgres -c "psql -c\"create database sa_bayes owner sa_user;\""
 su - postgres -c "psql -d sa_bayes -U sa_user -c \"\i /usr/share/doc/spamassassin/sql/bayes_pg.sql;\""
 	
 service postgresql restart
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -375,18 +401,18 @@ EOF
 chmod 0440 /etc/sudoers.d/baruwa
 
 cd /etc/exim4
-curl -O $dlurl/exim4.conf
-curl -O $dlurl/exim_out.conf
-curl -O $dlurl/macros.conf
-curl -O $dlurl/trusted-configs
+wget -N $dlurl/exim4.conf
+wget -N $dlurl/exim_out.conf
+wget -N $dlurl/macros.conf
+wget -N $dlurl/trusted-configs
        
 mkdir /etc/exim4/baruwa
 cd /etc/exim4/baruwa
-curl -O $dlurl/exim-bcrypt.pl
+wget -N $dlurl/exim-bcrypt.pl
 
 usermod -a -G Debian-exim clamav
 service exim4 start
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -396,7 +422,7 @@ if [$debug == "1" ]; then pause; fi
 func_perl () {
 echo "[EFA] Installing Perl Modules"
 yes | perl -MCPAN -e "CPAN::Shell->force(qw(install Mail::SPF::Query Digest::SHA1 Parse::RecDescent SAVI Test::Manifest YAML Business::ISBN Data::Dump Encoding::FixLatin AnyEvent::Handle EV IP::Country::Fast Encode::Detect Crypt::OpenSSL::RSA));"
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -407,7 +433,7 @@ func_baruwa_config (){
 
 echo "[EFA] Configuring Baruwa"
 cd $home
-virtualenv --distribute px
+virtualenv -p /usr/bin/python$pythonv --distribute px
 source px/bin/activate
 export SWIG_FEATURES="-cpperraswarn -includeall -D__`uname -m`__ -I/usr/include/openssl"
 pip install -U distribute
@@ -418,8 +444,8 @@ mkdir /etc/baruwa
 mv $home/production.ini /etc/baruwa/production.ini
 sed -i -e 's/exim/Debian-exim/' /etc/baruwa/production.ini
 sed -i -e 's/sqlalchemy.url/#sqlalchemy.url/' /etc/baruwa/production.ini
-sed -i "72i sqlalchemy.url = postgresql://baruwa:password@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
-sed -i -e 's:broker.password =:broker.password = 'password':' \
+sed -i "72i sqlalchemy.url = postgresql://baruwa:$password@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
+sed -i -e 's:broker.password =:broker.password = '$password':' \
        -e "s:snowy.local:$(hostname):g" \
        -e 's:^#celery.queues:celery.queues:' /etc/baruwa/production.ini
 	   
@@ -441,21 +467,21 @@ CELERYD_GROUP="baruwa"
 EOF
 
 cd $home
-curl -O $dlurl/baruwa.init
+wget -N $dlurl/baruwa.init
 mv baruwa.init /etc/init.d/baruwa
 chmod +x /etc/init.d/baruwa
 update-rc.d baruwa defaults
 service baruwa start
 
-$home/px/bin/paster setup-app /etc/baruwa/production.ini
+N | $home/px/bin/paster setup-app /etc/baruwa/production.ini
 indexer --all --rotate
-$home/px/bin/paster create-admin-user -u "root" -p "EfaPr0j3ct" -e "root@efa-project.org" -t UTC /etc/baruwa/production.ini
+$home/px/bin/paster create-admin-user -u "root" -p "$password" -e "root@efa-project.org" -t UTC /etc/baruwa/production.ini
 
-cd $home/px/lib/python2.7/site-packages/baruwa/controllers/
-curl -O $dlurl/taskids.sh
+cd $home/px/lib/python$pythonv/site-packages/baruwa/controllers/
+wget -N $dlurl/taskids.sh
 chmod +x taskids.sh
 ./taskids.sh
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -466,14 +492,14 @@ func_nginx () {
 echo "[EFA] Install and configure nginx"
 cd $home
 apt-get -y install nginx uwsgi uwsgi-plugin-python
-curl -O $dlurl/nginx.conf
+wget -N $dlurl/nginx.conf
 mv nginx.conf /etc/nginx/sites-enabled/baruwa
 rm -r /etc/nginx/sites-enabled/default
 sed -i '/daemonize/ahome = /home/baruwa/px' /etc/baruwa/production.ini
 sed -i '/home/apaste = config:/etc/baruwa/production.ini' /etc/baruwa/production.ini
 sed -i '/paste/achmod-socket = 666' /etc/baruwa/production.ini
 ln -s /etc/baruwa/production.ini /etc/uwsgi/apps-enabled/
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -497,7 +523,7 @@ sed -i 's:= 3:= 0:' /var/lib/MailScanner/.razor/razor-agent.conf
 sa-learn --sync
 
 cd $home
-wget $dlurl/dcc.tar.Z
+wget -N $dlurl/dcc.tar.Z
 tar xvzf dcc.tar.Z
 cd dcc-1.3.147/
 ./configure
@@ -519,7 +545,7 @@ curl $dlurl/DCC.init -o /etc/init.d/DCC
 chmod 755 /etc/init.d/DCC
 update-rc.d DCC defaults
 service DCC start
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -541,7 +567,7 @@ curl $dlurl/update_bad_phishing_sites -o /usr/sbin/update_bad_phishing_sites
 chmod +x /usr/sbin/update_bad_phishing_sites
 curl $dlurl/update_bad_phishing_emails -o /usr/sbin/update_bad_phishing_emails
 chmod +x /usr/sbin/update_bad_phishing_emails
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -561,15 +587,17 @@ service mailscanner restart
 rm -r /var/log/exim4/paniclog
 service exim4 restart
 
-echo "/var/spool/MailScanner/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
-echo "/var/spool/MailScanner/incoming/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
-sed -i '/exim4/a/var/spool/exim.in/** rw,' /etc/apparmor.d/local/usr.sbin.clamd
-service apparmor restart &> /dev/null
+#echo "/var/spool/MailScanner/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
+#echo "/var/spool/MailScanner/incoming/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
+#sed -i '/exim4/a/var/spool/exim.in/** rw,' /etc/apparmor.d/local/usr.sbin.clamd
+#service apparmor restart &> /dev/null
+
+indexer --all --rotate
 
 freshclam
 service clamav-daemon restart
 /usr/sbin/clamav-unofficial-sigs
-if [$debug == "1" ]; then pause; fi
+if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
@@ -599,9 +627,9 @@ if [ `whoami` == root ]
 	then
 		func_checkos
 		func_disclaimer
+		func_dependencies
 		func_prerequirements
 		func_efarequirements
-		func_dependencies
 		func_dnsmasq
 		func_baruwa
 		func_postgresql

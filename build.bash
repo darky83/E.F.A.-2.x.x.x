@@ -42,7 +42,7 @@ dlurl="http://dl.efa-project.org/build/$version"		# URL for file downloads
 builddir="/usr/src/EFA"									# E.F.A. Build dir
 logdir="/var/log/EFA"									# E.F.A. Log dir
 home="/home/baruwa"										# Baruwa home
-pythonv="2.7"											# Python version to use
+pythonv="2.6"											# Python version to use
 password="EfaPr0j3ct"									# Default password (should not be changed!)
 debug="1"												# Enable/Disable Debug
 # +---------------------------------------------------+
@@ -221,7 +221,7 @@ export DEBIAN_FRONTEND='noninteractive'
 
 apt-get update
 apt-get -y install gcc g++ git subversion curl patch sudo
-apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
+apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev python2.6-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
 apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim
 apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
 # python-babel apparmor
@@ -257,7 +257,7 @@ wget -N $dlurl/requirements.txt
 pip install distribute
 pip install -U distribute
 pip install --timeout 60 -r requirements.txt
-
+if [ $debug == "1" ]; then pause; fi
 
 cd $home
 curl $dlurl/sphinxapi.py -o px/lib/python$pythonv/site-packages/sphinxapi.py

@@ -1,6 +1,6 @@
 #!/bin/bash
 # +--------------------------------------------------------------------+
-# EFA 2.0.0.1 build script version 20130809
+# EFA 2.0.0.1 build script version 20130807
 # +--------------------------------------------------------------------+
 # Copyright (C) 2012~2013  http://www.efa-project.org
 #
@@ -22,10 +22,11 @@
 # (Pre requirements for barebone install)
 # +---------------------------------------------------+
 # - Configure Hardware
-# - Install Ubuntu minimal with following disk layout
+# - Install Debian minimal with following disk layout
 #     / 		( 6GB)
 #     /tmp 		( 1GB)
 #     /var		(12GB)
+#     /var/spool	(60GB)
 #     swap		( 1GB)
 # - Set /tmp "noexec,nosuid" in /etc/fstab
 # - Configure IP settings
@@ -36,35 +37,14 @@
 # Variables
 # +---------------------------------------------------+
 version="2.0.0.1"										# E.F.A. Version
-osv="12.04"												# Required Ubuntu Version
+debianv="7.1"											# Required Debian Version
 dlurl="http://dl.efa-project.org/build/$version"		# URL for file downloads
 builddir="/usr/src/EFA"									# E.F.A. Build dir
 logdir="/var/log/EFA"									# E.F.A. Log dir
 home="/home/baruwa"										# Baruwa home
-pythonv="2.7"											# Python version to use
+pythonv="2.6"											# Python version to use
 password="EfaPr0j3ct"									# Default password (should not be changed!)
 debug="1"												# Enable/Disable Debug
-# +---------------------------------------------------+
-
-# +---------------------------------------------------+
-# Check OS
-# +---------------------------------------------------+
-func_checkos () {
-
-echo "[EFA] Checking Ubuntu Version"
-if [ ! `lsb_release -r -s` == "$osv" ]
-	then
-		echo "[EFA] Error you do not seem to be running Ubuntu $osv."
-		echo "[EFA] Ubuntu ]$osv is required to continue this build."
-		echo "[EFA] Please see http://www.efa-project.org for more info."
-		if [ $debug == "1" ]; then pause; fi
-		exit 0
-fi
-
-if [ $debug == "1" ]; then pause; fi
-}
-# +---------------------------------------------------+
-
 # +---------------------------------------------------+
 # Disclaimer
 # +---------------------------------------------------+
@@ -81,23 +61,30 @@ if [ $debug == "1" ]; then pause; fi
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
-# Install and configure dependencies
+# Check OS
 # +---------------------------------------------------+
-func_dependencies () {
+func_checkos () {
 
-echo "[EFA] Install and configuring dependencies"
-export DEBIAN_FRONTEND='noninteractive'
+echo "[EFA] Checking Debian Version"
+if [ -f "/etc/debian_version" ]
+	then
+		if [ ! `cat /etc/debian_version` == "$debianv" ]
+			then
+				echo "[EFA] Error you do not seem to be running Debian $debianv."
+				echo "[EFA] Debian $debianv is required to continue this build."
+				if [ $debug == "1" ]; then pause; fi
+				exit 0
+		fi
+	else
+		echo "[EFA] Error you do not seem to be running an Debian OS."
+		echo "[EFA] Please see http://www.efa-project.org for more info."
+		if [ $debug == "1" ]; then pause; fi
+		exit 0
+fi
 
-apt-get update
-apt-get -y install gcc g++ git subversion curl patch sudo apparmor
-apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
-apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim
-apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
-# python-babel 
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
-
 
 # +---------------------------------------------------+
 # Pre requirements
@@ -110,7 +97,9 @@ echo 'DPkg:Pre-Invoke{"mount -o remount,exec /tmp";};' >> /etc/apt/apt.conf
 echo 'DPkg:Post-Invoke {"mount -o remount /tmp";};' >> /etc/apt/apt.conf
 
 # Stop unneeded services
-update-rc.d -f whoopsie remove
+update-rc.d -f mpt-statusd remove
+update-rc.d -f nfs-common remove
+update-rc.d -f portmap remove
 
 # Secure SSH
 sed -i '/^PermitRootLogin/ c\PermitRootLogin no' /etc/ssh/sshd_config
@@ -161,6 +150,85 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
+# +---------------------------------------------------+
+# Cleanup
+# +---------------------------------------------------+
+func_cleanup () {
+
+echo "[EFA] Starting Cleanup"
+# Clean SSH keys (gererate at first boot)
+/bin/rm /etc/ssh/ssh_host_*
+
+# Disable all services untill we are configured (EFA-Init)
+update-rc.d exim4 remove
+update-rc.d sphinxsearch remove
+update-rc.d uwsgi remove
+update-rc.d nginx remove
+update-rc.d dnsmasq remove
+update-rc.d memcached remove
+update-rc.d baruwa remove
+update-rc.d rabbitmq-server remove
+update-rc.d DCC remove
+update-rc.d postgresql remove
+update-rc.d clamav-freshclam remove
+update-rc.d clamav-daemon remove
+update-rc.d mailscanner remove
+#/etc/init.d/clamav-freshclam start
+#/etc/init.d/clamav-daemon start
+#/etc/init.d/postgresql start
+#/etc/init.d/DCC start
+#/etc/init.d/rabbitmq-server start
+#/etc/init.d/baruwa start
+#/etc/init.d/memcached start
+#/etc/init.d/dnsmasq start
+#/etc/init.d/uwsgi start
+#/etc/init.d/nginx start
+#/etc/init.d/sphinxsearch start
+#/etc/init.d/mailscanner start
+#/etc/init.d/exim4 start
+
+
+# Clean network configs
+rm /var/cache/apt/archives/*
+echo "auto lo" > /etc/network/interfaces
+echo "iface lo inet loopback" >> /etc/network/interfaces
+echo " " >> /etc/network/interfaces
+echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
+echo "nameserver 8.8.8.8" > /etc/resolv.
+echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+echo "127.0.0.1               localhost efa" > /etc/hosts
+
+echo "auto eth0" > /etc/network/interfaces.d/eth0
+echo "iface eth0 inet dhcp" >> /etc/network/interfaces.d/eth0
+
+# Clean history
+rm /home/efaadmin/.bash_history
+rm /root/.bash_history
+
+# Clean logs
+rm -r /var/log/exim4/*
+
+if [ $debug == "1" ]; then pause; fi
+}
+# +---------------------------------------------------+
+
+# +---------------------------------------------------+
+# Install and configure dependencies
+# +---------------------------------------------------+
+func_dependencies () {
+
+echo "[EFA] Install and configuring dependencies"
+export DEBIAN_FRONTEND='noninteractive'
+
+apt-get update
+apt-get -y install gcc g++ git subversion curl patch sudo
+apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev python2.6-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
+apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim
+apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
+# python-babel apparmor
+if [ $debug == "1" ]; then pause; fi
+}
+# +---------------------------------------------------+
 
 # +---------------------------------------------------+
 # Install and Configure dnsmasq
@@ -170,12 +238,11 @@ echo "[EFA] Installing dnsmasq"
 apt-get -y install dnsmasq
 sed -i s/"#listen-address="/"listen-address=127.0.0.1"/ /etc/dnsmasq.conf
 echo -e "# IPv6 \nnet.ipv6.conf.all.disable_ipv6 = 1 \nnet.ipv6.conf.default.disable_ipv6 = 1 \nnet.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
-sysctl -q -p
+sysctl -p -q
 service dnsmasq restart
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
-
 
 # +---------------------------------------------------+
 # Install baruwa
@@ -210,7 +277,6 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
-
 # +---------------------------------------------------+
 # Configure postgresql
 # +---------------------------------------------------+
@@ -235,15 +301,6 @@ su - postgres -c "psql baruwa -c \"CREATE LANGUAGE plpythonu;\""
 wget -N $dlurl/admin-functions.sql
 su - postgres -c 'psql baruwa -f '$home'/admin-functions.sql'
 service postgresql restart
-if [ $debug == "1" ]; then pause; fi
-}
-# +---------------------------------------------------+
-
-
-# +---------------------------------------------------+
-# Configure SphinxSearch
-# +---------------------------------------------------+
-func_sphinxsearch () {
 sed -i -e 's:START=no:START=yes:' /etc/default/sphinxsearch
 cd /etc/sphinxsearch/
 wget -N $dlurl/sphinx.conf
@@ -253,7 +310,6 @@ cd $home
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
-
 
 # +---------------------------------------------------+
 # Install and Configure RabbitMQ
@@ -271,7 +327,6 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
-
 # +---------------------------------------------------+
 # Install and Configure Mailscanner
 # +---------------------------------------------------+
@@ -280,7 +335,7 @@ func_mailscanner () {
 echo "[EFA] Installing and configuring Mailscanner"
 #echo "Installing Baruwa repo for mailscanner."
 wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
-echo "deb http://apt.baruwa.org/ubuntu precise main" >> /etc/apt/sources.list
+echo "deb http://apt.baruwa.org/debian wheezy main" >> /etc/apt/sources.list
 apt-get update
 apt-get -y install mailscanner exim4-daemon-heavy
 cd $home
@@ -329,18 +384,6 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
-
-# +---------------------------------------------------+
-# Install Perl Modules
-# +---------------------------------------------------+
-func_perl () {
-echo "[EFA] Installing Perl Modules"
-yes, local::lib, yes | perl -MCPAN -e "CPAN::Shell->force(qw(install Mail::SPF::Query Digest::SHA1 Parse::RecDescent SAVI Test::Manifest YAML Business::ISBN Data::Dump Encoding::FixLatin AnyEvent::Handle EV IP::Country::Fast Encode::Detect Crypt::OpenSSL::RSA));"
-if [ $debug == "1" ]; then pause; fi
-}
-# +---------------------------------------------------+
-
-
 # +---------------------------------------------------+
 # Configure Exim
 # +---------------------------------------------------+
@@ -380,6 +423,15 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
+# +---------------------------------------------------+
+# Install Perl Modules
+# +---------------------------------------------------+
+func_perl () {
+echo "[EFA] Installing Perl Modules"
+yes | perl -MCPAN -e "CPAN::Shell->force(qw(install Mail::SPF::Query Digest::SHA1 Parse::RecDescent SAVI Test::Manifest YAML Business::ISBN Data::Dump Encoding::FixLatin AnyEvent::Handle EV IP::Country::Fast Encode::Detect Crypt::OpenSSL::RSA));"
+if [ $debug == "1" ]; then pause; fi
+}
+# +---------------------------------------------------+
 
 # +---------------------------------------------------+
 # Configure Baruwa
@@ -440,7 +492,6 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
-
 # +---------------------------------------------------+
 # Install and configure nginx
 # +---------------------------------------------------+
@@ -458,7 +509,6 @@ ln -s /etc/baruwa/production.ini /etc/uwsgi/apps-enabled/
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
-
 
 # +---------------------------------------------------+
 # Install and configure Pyzor, Razor and DCC
@@ -506,7 +556,6 @@ if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 
-
 # +---------------------------------------------------+
 # Cron settings
 # +---------------------------------------------------+
@@ -530,54 +579,34 @@ if [ $debug == "1" ]; then pause; fi
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
-# Post-Config
+# Services
 # +---------------------------------------------------+
-func_postconfig () {
+func_services () {
 
-echo "/var/spool/MailScanner/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
-echo "/var/spool/MailScanner/incoming/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
-sed -i '/exim4/a/var/spool/exim.in/** rw,' /etc/apparmor.d/usr.sbin.clamd
-service apparmor restart &> /dev/null
+service nginx restart
+service uwsgi restart
+service memcached restart
+service postgresql restart
+service sphinxsearch restart
+service rabbitmq-server restart
+service baruwa restart
+service mailscanner restart
+rm -r /var/log/exim4/paniclog
+service exim4 restart
+
+#echo "/var/spool/MailScanner/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
+#echo "/var/spool/MailScanner/incoming/** rw," >> /etc/apparmor.d/local/usr.sbin.clamd
+#sed -i '/exim4/a/var/spool/exim.in/** rw,' /etc/apparmor.d/local/usr.sbin.clamd
+#service apparmor restart &> /dev/null
 
 indexer --all --rotate
-#freshclam
-#service clamav-daemon restart
-#/usr/sbin/clamav-unofficial-sigs
 
-}
-# +---------------------------------------------------+
-# Cleanup
-# +---------------------------------------------------+
-func_cleanup () {
-
-echo "[EFA] Starting Cleanup"
-# Clean SSH keys (gererate at first boot)
-/bin/rm /etc/ssh/ssh_host_*
-
-# Clean network configs
-rm /var/cache/apt/archives/*
-echo "auto lo" > /etc/network/interfaces
-echo "iface lo inet loopback" >> /etc/network/interfaces
-echo " " >> /etc/network/interfaces
-echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
-echo "nameserver 8.8.8.8" > /etc/resolv.
-echo "nameserver 8.8.4.4" >> /etc/resolv.conf
-echo "127.0.0.1               localhost efa" > /etc/hosts
-
-echo "auto eth0" > /etc/network/interfaces.d/eth0
-echo "iface eth0 inet dhcp" >> /etc/network/interfaces.d/eth0
-
-# Clean history
-rm /home/efaadmin/.bash_history
-rm /root/.bash_history
-
-# Clean logs
-rm -r /var/log/exim4/*
-
+freshclam
+service clamav-daemon restart
+/usr/sbin/clamav-unofficial-sigs
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
-
 
 # +---------------------------------------------------+
 # Generate Key's
@@ -610,7 +639,6 @@ if [ `whoami` == root ]
 		func_dnsmasq
 		func_baruwa
 		func_postgresql
-		func_sphinxsearch
 		func_rabbitmq
 		func_mailscanner
 		func_perl
@@ -619,8 +647,8 @@ if [ `whoami` == root ]
 		func_nginx
 		func_pyzor_razor_dcc
 		func_cron
-		func_postconfig
-		func_cleanup
+		func_services
+		#func_cleanup
 		#reboot
 	else
 		echo "[EFA] ERROR: Please become root."

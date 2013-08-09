@@ -127,11 +127,11 @@ func_efarequirements () {
 echo "[EFA] Configuring E.F.A Requirements"
 echo "EFA-$version" >> /etc/EFA-Version
 cd /usr/local/sbin
-wget -N $dlurl/EFA-Init
+wget -N $dlurl/EFA/EFA-Init
 chmod 700 EFA-Init
-wget -N $dlurl/EFA-Configure
+wget -N $dlurl/EFA/EFA-Configure
 chmod 700 EFA-Configure
-wget -N $dlurl/EFA-Update
+wget -N $dlurl/EFA/EFA-Update
 chmod 700 EFA-Update
 
 mkdir $builddir
@@ -154,7 +154,7 @@ sed -i '1i\\/usr\/local\/sbin\/EFA-Init' /root/.bashrc
 
 # Monthly check for update
 cd /etc/cron.monthly
-wget -N $dlurl/EFA-Monthly-cron
+wget -N $dlurl/EFA/EFA-Monthly-cron
 chmod 700 EFA-Monthly-cron
 
 if [ $debug == "1" ]; then pause; fi
@@ -187,23 +187,23 @@ mkdir -p $home && cd $home
 virtualenv -p /usr/bin/python$pythonv  --distribute px
 source px/bin/activate
 export SWIG_FEATURES="-cpperraswarn -includeall -D__`uname -m`__ -I/usr/include/openssl"
-wget -N $dlurl/requirements.txt
+wget -N $dlurl/Baruwa/requirements.txt
 pip install distribute
 pip install -U distribute
 pip install --timeout 60 -r requirements.txt
 if [ $debug == "1" ]; then pause; fi
 
 cd $home
-curl $dlurl/sphinxapi.py -o px/lib/python$pythonv/site-packages/sphinxapi.py
-wget -N $dlurl/repoze.who-friendly-form.patch
-wget -N $dlurl/repoze-who-fix-auth_tkt-tokens.patch
+curl $dlurl/Sphinx/sphinxapi.py -o px/lib/python$pythonv/site-packages/sphinxapi.py
+wget -N $dlurl/Patches/repoze.who-friendly-form.patch
+wget -N $dlurl/Patches/repoze-who-fix-auth_tkt-tokens.patch
 
 cd px/lib/python$pythonv/site-packages/repoze/who/plugins/
 patch -p3 -i $home/repoze.who-friendly-form.patch
 patch -p4 -i $home/repoze-who-fix-auth_tkt-tokens.patch
 cd $home
 
-wget -N $dlurl/m2crypto.sh
+wget -N $dlurl/m2crypto/m2crypto.sh
 chmod +x m2crypto.sh
 ./m2crypto.sh
 if [ $debug == "1" ]; then pause; fi
@@ -232,7 +232,7 @@ cd $home
 su - postgres -c "psql postgres -c \"CREATE ROLE baruwa WITH LOGIN PASSWORD '$password';\""
 su - postgres -c 'createdb -E UTF8 -O baruwa -T template1 baruwa'
 su - postgres -c "psql baruwa -c \"CREATE LANGUAGE plpythonu;\""
-wget -N $dlurl/admin-functions.sql
+wget -N $dlurl/postgresql/admin-functions.sql
 su - postgres -c 'psql baruwa -f '$home'/admin-functions.sql'
 service postgresql restart
 if [ $debug == "1" ]; then pause; fi
@@ -246,7 +246,7 @@ if [ $debug == "1" ]; then pause; fi
 func_sphinxsearch () {
 sed -i -e 's:START=no:START=yes:' /etc/default/sphinxsearch
 cd /etc/sphinxsearch/
-wget -N $dlurl/sphinx.conf
+wget -N $dlurl/Sphinx/sphinx.conf
 
 service sphinxsearch start
 cd $home
@@ -284,27 +284,27 @@ echo "deb http://apt.baruwa.org/ubuntu precise main" >> /etc/apt/sources.list
 apt-get update
 apt-get -y install mailscanner exim4-daemon-heavy
 cd $home
-wget -N $dlurl/mailscanner-baruwa-iwantlint.patch
-wget -N $dlurl/mailscanner-baruwa-sql-config.patch
+wget -N $dlurl/MailScanner/mailscanner-baruwa-iwantlint.patch
+wget -N $dlurl/MailScanner/mailscanner-baruwa-sql-config.patch
 cd /usr/sbin
 patch -i $home/mailscanner-baruwa-iwantlint.patch
 cd /usr/share/MailScanner/MailScanner
 patch -p3 -i $home/mailscanner-baruwa-sql-config.patch
 cd $home
-wget -N $dlurl/BS.pm
+wget -N $dlurl/MailScanner/BS.pm
 mv BS.pm /etc/MailScanner/CustomFunctions/
 cd /etc/MailScanner
 mv MailScanner.conf MailScanner.conf.orig
 cd $home
-wget -N $dlurl/MailScanner.conf
-wget -N $dlurl/scan.messages.rules
-wget -N $dlurl/nonspam.actions.rules
-wget -N $dlurl/filename.rules
-wget -N $dlurl/filetype.rules
-wget -N $dlurl/filename.rules.allowall.conf
-wget -N $dlurl/filetype.rules.allowall.conf
+wget -N $dlurl/MailScanner/MailScanner.conf
+wget -N $dlurl/MailScanner/scan.messages.rules
+wget -N $dlurl/MailScanner/nonspam.actions.rules
+wget -N $dlurl/MailScanner/filename.rules
+wget -N $dlurl/MailScanner/filetype.rules
+wget -N $dlurl/MailScanner/filename.rules.allowall.conf
+wget -N $dlurl/MailScanner/filetype.rules.allowall.conf
 mv /etc/MailScanner/spam.assassin.prefs.conf /etc/MailScanner/spam.assassin.prefs.conf.orig
-wget -N $dlurl/spam.assassin.prefs.conf
+wget -N $dlurl/MailScanner/spam.assassin.prefs.conf
 mv *.rules /etc/MailScanner/rules/
 mv *.conf /etc/MailScanner/
 chmod -R 777 /var/spool/MailScanner/
@@ -365,14 +365,14 @@ EOF
 chmod 0440 /etc/sudoers.d/baruwa
 
 cd /etc/exim4
-wget -N $dlurl/exim4.conf
-wget -N $dlurl/exim_out.conf
-wget -N $dlurl/macros.conf
-wget -N $dlurl/trusted-configs
+wget -N $dlurl/exim/exim4.conf
+wget -N $dlurl/exim/exim_out.conf
+wget -N $dlurl/exim/macros.conf
+wget -N $dlurl/exim/trusted-configs
        
 mkdir /etc/exim4/baruwa
 cd /etc/exim4/baruwa
-wget -N $dlurl/exim-bcrypt.pl
+wget -N $dlurl/exim/exim-bcrypt.pl
 
 usermod -a -G Debian-exim clamav
 service exim4 start
@@ -422,7 +422,7 @@ CELERYD_GROUP="baruwa"
 EOF
 
 cd $home
-wget -N $dlurl/baruwa.init
+wget -N $dlurl/Baruwa/baruwa.init
 mv baruwa.init /etc/init.d/baruwa
 chmod +x /etc/init.d/baruwa
 update-rc.d baruwa defaults
@@ -433,7 +433,7 @@ indexer --all --rotate
 $home/px/bin/paster create-admin-user -u "root" -p "$password" -e "root@efa-project.org" -t UTC /etc/baruwa/production.ini
 
 cd $home/px/lib/python$pythonv/site-packages/baruwa/controllers/
-wget -N $dlurl/taskids.sh
+wget -N $dlurl/Baruwa/taskids.sh
 chmod +x taskids.sh
 ./taskids.sh
 if [ $debug == "1" ]; then pause; fi
@@ -448,7 +448,7 @@ func_nginx () {
 echo "[EFA] Install and configure nginx"
 cd $home
 apt-get -y install nginx uwsgi uwsgi-plugin-python
-wget -N $dlurl/nginx.conf
+wget -N $dlurl/nginx/nginx.conf
 mv nginx.conf /etc/nginx/sites-enabled/baruwa
 rm -r /etc/nginx/sites-enabled/default
 sed -i '/daemonize/ahome = /home/baruwa/px' /etc/baruwa/production.ini
@@ -480,7 +480,7 @@ sed -i 's:= 3:= 0:' /var/lib/MailScanner/.razor/razor-agent.conf
 sa-learn --sync
 
 cd $home
-wget -N $dlurl/dcc.tar.Z
+wget -N $dlurl/DCC/dcc.tar.Z
 tar xvzf dcc.tar.Z
 cd dcc-1.3.147/
 ./configure
@@ -498,7 +498,7 @@ sed -i '/^DCCIFD_LOGDIR=/ c\DCCIFD_LOGDIR="/var/dcc/log"' /var/dcc/dcc_conf
 chown Debian-exim:Debian-exim /var/dcc
 sed -i "s/#loadplugin Mail::SpamAssassin::Plugin::DCC/loadplugin Mail::SpamAssassin::Plugin::DCC/g" /etc/mail/spamassassin/v310.pre
 sed -i "s/# loadplugin Mail::SpamAssassin::Plugin::RelayCountry/loadplugin Mail::SpamAssassin::Plugin::RelayCountry/g" /etc/mail/spamassassin/init.pre
-curl $dlurl/DCC.init -o /etc/init.d/DCC
+curl $dlurl/DCC/DCC.init -o /etc/init.d/DCC
 chmod 755 /etc/init.d/DCC
 update-rc.d DCC defaults
 service DCC start

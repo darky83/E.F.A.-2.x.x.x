@@ -1,0 +1,3 @@
+#!/bin/bash
+#
+indexer auditlog lists domains accounts organizations --rotate &>/dev/null

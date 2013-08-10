@@ -335,6 +335,8 @@ su - postgres -c "psql -c\"create role sa_user login;\""
 su - postgres -c "psql -c\"alter role sa_user password '$password';\""
 su - postgres -c "psql -c\"create database sa_bayes owner sa_user;\""
 su - postgres -c "psql -d sa_bayes -U sa_user -c \"\i /usr/share/doc/spamassassin/sql/bayes_pg.sql;\""
+su - postgres -c "psql -c\"create user efaadmin superuser;\""
+su - postgres -c "psql -c\"alter user efaadmin password '$password';\""
 	
 service postgresql restart
 if [ $debug == "1" ]; then pause; fi
@@ -559,6 +561,26 @@ mv /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo.png /home
 wget $dlurl/EFA/logo.png
 mv logo.png /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo.png
 
+#su - postgres -c "psql -d baruwa -c\"select * from configurations;\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('%web-site%','%web-site%','www.efa-project.org','1','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('webbugurl','WebBugReplacement','http://dl.efa-project.org/static/1x1spacer.gif','4','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('%org-name%','%org-name%','EFA Project','1','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('%org-long-name%','%org-long-name%','EFA Project MAIL GATEWAY','1','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('envfromheader','EnvelopeFromHeader','X-EFA-Envelope-From:','2','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('envtoheader','EnvelopeToHeader','X-EFA-Envelope-To:','2','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('idheader','IDHeader','X-EFA-ID:','2','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('ipverheader','IPProtocolVersionHeader',' X-EFA-IP-Protocol:','2','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('hostname','Hostname','the %org-name% ($HOSTNAME) EFA','2','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('spamvirusheader','SpamVirusHeader','X-EFA-SpamVirus-Report:','3','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('virusscanners','VirusScanners','{clamd}','3','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('noticesignature','NoticeSignature','-- E.F.A. Project Email Security %website%','6','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('noticesfrom','NoticesFrom','EFA','6','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('spamheader','SpamHeader','X-EFA-SpamCheck:','7','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('spamstarsheader','SpamScoreHeader','X-EFA-SpamScore:','7','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('mshmacheader','WatermarkHeader','X-%org-name%-EFA-Watermark:','7','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('mailheader','MailHeader','X-EFA:','2','1');\""
+su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('infoheader','InformationHeader','X-EFA-Information:','2','1');\""
+#su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('','','','','1');\""
 }
 # +---------------------------------------------------+
 # Cleanup

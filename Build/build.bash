@@ -1,6 +1,6 @@
 #!/bin/bash
 # +--------------------------------------------------------------------+
-# EFA 2.0.0.1 build script version 20130809
+# EFA 2.0.0.1 build script version 201308
 # +--------------------------------------------------------------------+
 # Copyright (C) 2012~2013  http://www.efa-project.org
 #
@@ -19,7 +19,7 @@
 # +--------------------------------------------------------------------+
 #
 # +---------------------------------------------------+
-# (Pre requirements for barebone install)
+# (Pre requirements for bare bone install)
 # +---------------------------------------------------+
 # - Configure Hardware
 # - Install Ubuntu minimal with following disk layout
@@ -88,12 +88,31 @@ func_dependencies () {
 echo "[EFA] Install and configuring dependencies"
 export DEBIAN_FRONTEND='noninteractive'
 
+echo "[EFA] Installing Baruwa repo for mailscanner."
+wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
+echo "deb http://apt.baruwa.org/ubuntu precise main" >> /etc/apt/sources.list
+
 apt-get update
-apt-get -y install gcc g++ git subversion curl patch sudo apparmor
-apt-get -y install libjpeg62-dev libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl libstring-crc32-perl libdigest-sha-perl
-apt-get -y install python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim
-apt-get -y install libconvert-tnef-perl libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
-# python-babel 
+apt-get -y install gcc g++ git subversion curl patch sudo apparmor dnsmasq rabbitmq-server \
+mailscanner exim4-daemon-heavy nginx uwsgi uwsgi-plugin-python razor pyzor libjpeg62-dev \
+libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig \
+libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 \
+libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl \
+libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl \
+libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl \
+libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl \
+libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl \
+libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 \
+liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl \
+libstring-crc32-perl libdigest-sha-perl python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 \
+sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox \
+arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim libconvert-tnef-perl \
+libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl \
+libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl \
+libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl \
+libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl \
+libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl \
+libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
@@ -147,7 +166,7 @@ echo "------------------------------" >> /etc/issue
 echo "  http://www.efa-project.org  " >> /etc/issue
 echo "------------------------------" >> /etc/issue
 echo "" >> /etc/issue
-echo "First time login: root/EfaPr0j3ct" >> /etc/issue
+echo "First time login: efaadmin/EfaPr0j3ct" >> /etc/issue
 
 # Set EFA-Init to run at first root login:
 sed -i '1i\\/usr\/local\/sbin\/EFA-Init' /root/.bashrc
@@ -163,11 +182,10 @@ if [ $debug == "1" ]; then pause; fi
 
 
 # +---------------------------------------------------+
-# Install and Configure dnsmasq
+# Configure dnsmasq
 # +---------------------------------------------------+
 func_dnsmasq (){
-echo "[EFA] Installing dnsmasq"
-apt-get -y install dnsmasq
+echo "[EFA] Configure dnsmasq"
 sed -i s/"#listen-address="/"listen-address=127.0.0.1"/ /etc/dnsmasq.conf
 echo -e "# IPv6 \nnet.ipv6.conf.all.disable_ipv6 = 1 \nnet.ipv6.conf.default.disable_ipv6 = 1 \nnet.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
 sysctl -q -p
@@ -256,13 +274,11 @@ if [ $debug == "1" ]; then pause; fi
 
 
 # +---------------------------------------------------+
-# Install and Configure RabbitMQ
+# Configure RabbitMQ
 # +---------------------------------------------------+
 func_rabbitmq () {
 
 echo "[EFA] Configuring RabbitMQ"
-apt-get -y install rabbitmq-server
-
 rabbitmqctl delete_user guest
 rabbitmqctl add_user baruwa $password
 rabbitmqctl add_vhost baruwa
@@ -277,12 +293,7 @@ if [ $debug == "1" ]; then pause; fi
 # +---------------------------------------------------+
 func_mailscanner () {
 
-echo "[EFA] Installing and configuring Mailscanner"
-#echo "Installing Baruwa repo for mailscanner."
-wget -cq -O - http://apt.baruwa.org/baruwa-apt-keys.gpg | apt-key add - &> /dev/null
-echo "deb http://apt.baruwa.org/ubuntu precise main" >> /etc/apt/sources.list
-apt-get update
-apt-get -y install mailscanner exim4-daemon-heavy
+echo "[EFA] configuring Mailscanner"
 cd $home
 wget -N $dlurl/MailScanner/mailscanner-baruwa-iwantlint.patch
 wget -N $dlurl/MailScanner/mailscanner-baruwa-sql-config.patch
@@ -309,6 +320,7 @@ mv *.rules /etc/MailScanner/rules/
 mv *.conf /etc/MailScanner/
 chmod -R 777 /var/spool/MailScanner/
 ln -s /etc/MailScanner/spam.assassin.prefs.conf /etc/mail/spamassassin/mailscanner.cf
+mkdir -p /var/lib/spamassassin/3.003001
 
 sed -i 's:/usr/local:/usr/:' /etc/MailScanner/autoupdate/clamav-autoupdate
 sed -i s/"#run_mailscanner"/"run_mailscanner"/ /etc/default/mailscanner
@@ -442,12 +454,11 @@ if [ $debug == "1" ]; then pause; fi
 
 
 # +---------------------------------------------------+
-# Install and configure nginx
+# Configure nginx
 # +---------------------------------------------------+
 func_nginx () {
-echo "[EFA] Install and configure nginx"
+echo "[EFA] configure nginx"
 cd $home
-apt-get -y install nginx uwsgi uwsgi-plugin-python
 wget -N $dlurl/nginx/nginx.conf
 mv nginx.conf /etc/nginx/sites-enabled/baruwa
 rm -r /etc/nginx/sites-enabled/default
@@ -461,12 +472,11 @@ if [ $debug == "1" ]; then pause; fi
 
 
 # +---------------------------------------------------+
-# Install and configure Pyzor, Razor and DCC
+# Configure Pyzor, Razor and DCC
 # +---------------------------------------------------+
 func_pyzor_razor_dcc () {
 
-echo "[EFA] Install and configure Pyzor, Razor and DCC"
-apt-get -y install razor pyzor
+echo "[EFA] Configure Pyzor, Razor and DCC"
 pyzor --homedir=/var/lib/MailScanner discover
 pyzor ping
 
@@ -513,17 +523,17 @@ if [ $debug == "1" ]; then pause; fi
 func_cron () {
 
 echo "[EFA] Setting Cron Jobs"
-curl $dlurl/cron.baruwa-updateindex -o /etc/cron.hourly/baruwa-updateindex
+curl $dlurl/cron/cron.baruwa-updateindex -o /etc/cron.hourly/baruwa-updateindex 
 chmod +x /etc/cron.hourly/baruwa-updateindex
-curl $dlurl/cron.baruwa -o /etc/cron.d/baruwa
+curl $dlurl/cron/cron.baruwa -o /etc/cron.d/baruwa
 chmod +x /etc/cron.d/baruwa
-curl $dlurl/cron.mailscanner -o /etc/cron.d/mailscanner
+curl $dlurl/cron/cron.mailscanner -o /etc/cron.d/mailscanner
 chmod +x /etc/cron.d/mailscanner
-curl $dlurl/check_mailscanner -o /usr/sbin/check_mailscanner
+curl $dlurl/cron/check_mailscanner -o /usr/sbin/check_mailscanner
 chmod +x /usr/sbin/check_mailscanner
-curl $dlurl/update_bad_phishing_sites -o /usr/sbin/update_bad_phishing_sites
+curl $dlurl/cron/update_bad_phishing_sites -o /usr/sbin/update_bad_phishing_sites
 chmod +x /usr/sbin/update_bad_phishing_sites
-curl $dlurl/update_bad_phishing_emails -o /usr/sbin/update_bad_phishing_emails
+curl $dlurl/cron/update_bad_phishing_emails -o /usr/sbin/update_bad_phishing_emails
 chmod +x /usr/sbin/update_bad_phishing_emails
 if [ $debug == "1" ]; then pause; fi
 }
@@ -543,6 +553,11 @@ indexer --all --rotate
 #freshclam
 #service clamav-daemon restart
 #/usr/sbin/clamav-unofficial-sigs
+
+cd $home
+mv /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo.png /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo-baruwa.png
+wget $dlurl/EFA/logo.png
+mv logo.png /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo.png
 
 }
 # +---------------------------------------------------+

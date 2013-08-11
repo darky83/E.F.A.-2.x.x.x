@@ -1,0 +1,4 @@
+efaadmin ALL=(ALL) ALL
+efaadmin ALL=(ALL) NOPASSWD:    /usr/local/sbin/EFA-Configure *, \
+                                /usr/local/sbin/EFA-Init *, \
+                                /usr/local/sbin/EFA-Update *

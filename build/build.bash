@@ -169,7 +169,7 @@ func_efarequirements () {
   echo "First time login: efaadmin/EfaPr0j3ct" >> /etc/issue
 
   # Set EFA-Init to run at first root login:
-  sed -i '1i\\/usr\/local\/sbin\/EFA-Init' /home/efaadmin/.bashrc
+  sed -i '1i\sudo \/usr\/local\/sbin\/EFA-Init' /home/efaadmin/.bashrc
 
   # Monthly check for update
   cd /etc/cron.monthly

@@ -199,7 +199,6 @@ func_dnsmasq (){
 # Install baruwa
 # +---------------------------------------------------+
 func_baruwa (){
-
   echo "[EFA] Installing Baruwa"
   mkdir -p $home && cd $home
   virtualenv -p /usr/bin/python$pythonv  --distribute px
@@ -392,8 +391,7 @@ func_baruwa_config (){
   mkdir /etc/baruwa
   mv $home/production.ini /etc/baruwa/production.ini
   sed -i -e 's/exim/Debian-exim/' /etc/baruwa/production.ini
-  sed -i -e 's/sqlalchemy.url/#sqlalchemy.url/' /etc/baruwa/production.ini
-  sed -i "72i sqlalchemy.url = postgresql://baruwa:$password@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
+  sed -i "/^#sqlalchemy.url = / c\sqlalchemy.url = postgresql://baruwa:$password@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
   sed -i -e 's:broker.password =:broker.password = '$password':' \
          -e "s:snowy.local:$(hostname):g" \
          -e 's:^#celery.queues:celery.queues:' /etc/baruwa/production.ini
@@ -402,7 +400,7 @@ func_baruwa_config (){
 
   getent group baruwa >/dev/null || addgroup --system baruwa
   getent passwd baruwa >/dev/null || adduser --system --ingroup baruwa --home /var/lib/baruwa --no-create-home --gecos "Baruwa user" --disabled-login baruwa
-  chown baruwa.baruwa -R /var/lib/baruwa /var/run/baruwa /var/log/baruwa /var/lock/baruwa /etc/MailScanner/baruwa
+  chown baruwa.baruwa -R /var/lib/baruwa /var/run/baruwa /var/log/baruwa /etc/MailScanner/baruwa
   usermod -a -G Debian-exim baruwa
 
   cat > /etc/default/baruwa << 'EOF'
@@ -424,7 +422,7 @@ EOF
 
   N | $home/px/bin/paster setup-app /etc/baruwa/production.ini
   indexer --all --rotate
-  $home/px/bin/paster create-admin-user -u "root" -p "$password" -e "root@efa-project.org" -t UTC /etc/baruwa/production.ini
+  #$home/px/bin/paster create-admin-user -u "efaadmin" -p "$password" -e "root@efa-project.org" -t UTC /etc/baruwa/production.ini
 
   cd $home/px/lib/python$pythonv/site-packages/baruwa/controllers/
   wget -N $dlurl/Baruwa/taskids.sh
@@ -583,7 +581,7 @@ func_cleanup () {
   echo "iface lo inet loopback" >> /etc/network/interfaces
   echo " " >> /etc/network/interfaces
   echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
-  echo "nameserver 8.8.8.8" > /etc/resolv.
+  echo "nameserver 8.8.8.8" >> /etc/resolv.conf
   echo "nameserver 8.8.4.4" >> /etc/resolv.conf
   echo "127.0.0.1               localhost efa" > /etc/hosts
 

@@ -212,6 +212,37 @@ function func_ask-dns2() {
 }
 # +---------------------------------------------------+
 
+
+# +---------------------------------------------------+
+function func_ask-password() {
+  func_echo-header
+  echo -e "$green[EFA]$clean Please enter the password for the efaadmin user."
+  echo -e -n "$green[EFA]$clean Password: "
+  read -s efaadminpwd
+  echo -e ""
+  echo -e -n "$green[EFA]$clean Password Again: "
+  read -s efaadminpwd2
+  efaadminpwdcheck=1
+  while [ $efaadminpwdcheck != 0 ]
+   do
+     if [[ $efaadminpwd = "$efaadminpwd2" ]]
+	  then
+	    efaadminpwdcheck=0
+	 else 
+	   echo -e ""
+       echo -e "       $red ERROR: The passwords do not seem to match"
+       echo -e "        ERROR: Please try again$clean"
+	   echo -e "$green[EFA]$clean Please enter the password for the efaadmin user."
+       echo -e -n "$green[EFA]$clean Password: "
+	   read -s efaadminpwd
+	   echo -e ""
+       echo -e -n "$green[EFA]$clean Password Again: "
+       read -s efaadminpwd2
+	 fi
+  done
+}
+# +---------------------------------------------------+
+
 # +---------------------------------------------------+
 # Verify the settings
 # +---------------------------------------------------+
@@ -223,15 +254,16 @@ function func_verify-settings() {
     echo -e "--------------------------------------------------------------"
     echo -e "$green[EFA]$clean Thank you, the following settings have been gathered:"
     echo -e " "
-    echo -e "1) Hostname       : $HOSTNAME"
-    echo -e "2) Domainname     : $DOMAINNAME"
-    echo -e "3) Admin Email    : $ADMINEMAIL"
-    echo -e "4) Interface      : $INTERFACE"
-    echo -e "5) IP address     : $IPADDRESS"
-    echo -e "6) Netmask        : $NETMASK"
-    echo -e "7) Gateway        : $GATEWAY"
-    echo -e "8) Primary DNS    : $DNS1"
-    echo -e "9) Secondary DNS  : $DNS2"
+    echo -e "1)  Hostname       : $HOSTNAME"
+    echo -e "2)  Domainname     : $DOMAINNAME"
+    echo -e "3)  Admin Email    : $ADMINEMAIL"
+    echo -e "4)  Interface      : $INTERFACE"
+    echo -e "5)  IP address     : $IPADDRESS"
+    echo -e "6)  Netmask        : $NETMASK"
+    echo -e "7)  Gateway        : $GATEWAY"
+    echo -e "8)  Primary DNS    : $DNS1"
+    echo -e "9)  Secondary DNS  : $DNS2"
+	echo -e "10) efaadmin PWD   : <hidden>"
     echo -e "--------------------------------------------------------------"
     echo -e ""
     echo -e "$green[EFA]$clean If these settings are correct type 'OK' to continue."
@@ -258,6 +290,8 @@ function func_verify-settings() {
 			;;
 		9)	func_ask-dns2
 			;;
+		10)	func_ask-password
+			;;
 		OK)	verifymenu=0
 			;;
 		ok)	verifymenu=0
@@ -271,34 +305,125 @@ function func_verify-settings() {
 # Configure system
 # +---------------------------------------------------+
 function func_configure-system() {
+  func_echo-header
+  echo -e "$green[EFA]$clean Configuring system"
 
-echo "configuring system"
+  service rabbitmq-server stop
+  echo -e "$green[EFA]$clean - Setting new hostname"
+  echo $HOSTNAME > /etc/hostname
+  echo "$HOSTNAME.$DOMAINNAME" > /etc/mailname
+  echo "127.0.0.1               localhost   localhost.localdomain" > /etc/hosts
+  echo "$IPADDRESS              $HOSTNAME.$DOMAINNAME   $HOSTNAME" >> /etc/hosts
+  echo "" >> /etc/hosts
+  echo "# The following lines are desirable for IPv6 capable hosts" >> /etc/hosts
+  echo "::1     ip6-localhost ip6-loopback" >> /etc/hosts
+  echo "fe00::0 ip6-localnet" >> /etc/hosts
+  echo "ff00::0 ip6-mcastprefix" >> /etc/hosts
+  echo "ff02::1 ip6-allnodes" >> /etc/hosts
+  echo "ff02::2 ip6-allrouters" >> /etc/hosts
+  hostname $HOSTNAME
 
+  echo -e "$green[EFA]$clean - Setting DNS Servers"
+  echo "nameserver 127.0.0.1" > /etc/resolv.conf
+  echo "nameserver $DNS1" >> /etc/resolv.conf
+  echo "nameserver $DNS2" >> /etc/resolv.conf
+
+  echo -e "$green[EFA]$clean - Setting IP settings"
+  echo "auto $INTERFACE" > /etc/network/interfaces.d/$INTERFACE
+  echo "iface $INTERFACE inet static" >> /etc/network/interfaces.d/$INTERFACE
+  echo "        address $IPADDRESS" >> /etc/network/interfaces.d/$INTERFACE
+  echo "        netmask $NETMASK" >> /etc/network/interfaces.d/$INTERFACE
+  echo "        gateway $GATEWAY" >> /etc/network/interfaces.d/$INTERFACE
+  echo "        dns-nameservers $DNS1 $DNS2" >> /etc/network/interfaces.d/$INTERFACE
+
+  service networking stop
+  service networking start
+  
+  echo -e "$green[EFA]$clean - Changing passwords"
+  echo -e "efaadmin:$efaadminpwd" | chpasswd --md5 efaadmin
+  randompw
+  BARUWASQLPASSWORD=$PASSWD
+  randompw
+  SASQlPASSWORD=$PASSWD
+  randompw
+  BROKERPASSWORD=$PASSWD
+  
+  /home/baruwa/px/bin/paster create-admin-user -u "efaadmin" -p "$efaadminpwd" -e "$ADMINEMAIL" -t UTC /etc/baruwa/production.ini
+  su - postgres -c "psql -c \"ALTER USER baruwa WITH PASSWORD '$BARUWASQLPASSWORD';\""
+  su - postgres -c "psql -c \"ALTER USER sa_user WITH PASSWORD '$SASQlPASSWORD';\""
+  su - postgres -c "psql -c \"ALTER USER efaadmin password '$efaadminpwd';\""
+  
+  sed -i "/^bayes_sql_password / c\bayes_sql_password $SASQlPASSWORD" /etc/MailScanner/spam.assassin.prefs.conf
+  sed -i "/^DB Password = / c\DB Password = $BARUWASQLPASSWORD" /etc/MailScanner/MailScanner.conf
+  sed -i "/^sqlalchemy.url = / c\sqlalchemy.url = postgresql://baruwa:$BARUWASQLPASSWORD@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
+  sed -i "/^broker.password = / c\broker.password = $BROKERPASSWORD" /etc/baruwa/production.ini
+  sed -i "/^PGSQL_SERVERS = / c\PGSQL_SERVERS = 127.0.0.1::5432/baruwa/baruwa/$BARUWASQLPASSWORD" /etc/exim4/macros.conf
+  sed -i "/^sql_pass = / c\sql_pass = $BARUWASQLPASSWORD" /etc/sphinxsearch/sphinx.conf
+ 
+  service rabbitmq-server start
+  rabbitmqctl add_user baruwa $BROKERPASSWORD
+  rabbitmqctl add_vhost baruwa
+  rabbitmqctl set_permissions -p baruwa baruwa ".*" ".*" ".*"
+  rabbitmqctl delete_user guest	
+  
+  echo -e "$green[EFA]$clean - Changing baruwa settings"
+  sed -i "/^email_to = / c\email_to = $ADMINEMAIL" /etc/baruwa/production.ini
+  sed -i "/^error_email_from = / c\error_email_from = postmaster@$DOMAINNAME" /etc/baruwa/production.ini
+  sed -i "/^baruwa.default.url = / c\baruwa.default.url = http://$HOSTNAME.$DOMAINNAME" /etc/baruwa/production.ini
+  sed -i "/^baruwa.reports.sender = / c\baruwa.reports.sender = postmaster@$DOMAINNAME" /etc/baruwa/production.ini
+  # TODO sed -i "/^baruwa.timezone = / c\baruwa.timezone = $TIMEZONE" /etc/baruwa/production.ini
+  sed -i "/^celery.queues = / c\celery.queues = {\"$HOSTNAME\":{\"exchange\": \"host\", \"exchange_type\": \"direct\",\"binding_key\":\"$HOSTNAME\",},\"msbackend\":{\"exchange\":\"ms\", \"exchange_type\":\"fanout\",\"binding_key\":\"mstasks\"},\"default\": {\"exchange\": \"default\",\"binding_key\": \"default\"}}" /etc/baruwa/production.ini
+  
+  
+  echo -e "$green[EFA]$clean - Changing exim settings"
+  sed -i "/^dc_other_hostnames=/ c\dc_other_hostnames='$HOSTNAME'" /etc/exim4/update-exim4.conf.conf
+  
+  echo -e "$green[EFA]$clean - Changing nginx settings"
+  sed -i "/^server_name / c\dc_other_hostnames=$HOSTNAME.$DOMAINNAME;" /etc/nginx/sites-enabled/baruwa
+  
+  echo -e "$green[EFA]$clean - Configuring razor"
+  razor-admin -d -create >> /var/log/razor-setup.log
+  razor-admin -register >> /var/log/razor-setup.log
+  
+  echo -e "$green[EFA]$clean - Updating Freshclam"
+  freshclam
 }
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
-# The final thingy's
+# The final settings
 # +---------------------------------------------------+
 function func_end()
 {
-  echo "Generating SSH Host keys"
+  echo -e "$green[EFA]$clean Generating SSH Host keys"
   dpkg-reconfigure openssh-server
 
   sed -i "/^First time login: /d" /etc/issue
 
-  echo "/etc/init.d/baruwa start" > /etc/rc.local
-  echo "/etc/init.d/DCC start" >> /etc/rc.local
-  echo "exit 0" >> /etc/rc.local
-
-  echo "Removing configure script from root login"
+  echo -e "$green[EFA]$clean Removing configure script from root login & set EFA-Configure"
   sed -i "/^sudo \/usr\/local\/sbin\/EFA-Init/d" /home/efaadmin/.bashrc
-
+  sed -i '1i\sudo \/usr\/local\/sbin\/EFA-Configure' /home/efaadmin/.bashrc
+  
   touch /etc/EFA-Configured
-  echo "ADMINEMAIL:$ADMINEMAIL" > /etc/EFA-Configured
+  echo "HOSTNAME:$HOSTNAME" >> /etc/EFA-Configured
+  echo "DOMAINNAME:$DOMAINNAME" >> /etc/EFA-Configured
+  echo "ADMINEMAIL:$ADMINEMAIL" >> /etc/EFA-Configured
+  echo "INTERFACE:$INTERFACE" >> /etc/EFA-Configured
+  echo "IPADDRESS:$IPADDRESS" >> /etc/EFA-Configured
+  echo "NETMASK:$NETMASK" >> /etc/EFA-Configured
+  echo "GATEWAY:$GATEWAY" >> /etc/EFA-Configured
+  echo "DNS1:$DNS1" >> /etc/EFA-Configured
+  echo "DNS2:$DNS2" >> /etc/EFA-Configured
+  echo "BARUWASQLPASSWORD:$BARUWASQLPASSWORD" >> /etc/EFA-Configured
+  echo "SASQlPASSWORD:$SASQlPASSWORD" >> /etc/EFA-Configured
+  echo "BROKERPASSWORD:$BROKERPASSWORD" >> /etc/EFA-Configured
   chmod 600 /etc/EFA-Configured
-  echo "All settings applied rebooting now"
-  sleep 10
+  
+  rm -r /var/log/exim4/*
+  
+  func_echo-header
+  echo -e "$green[EFA]$clean All settings applied rebooting when you press enter."
+  pause
   reboot
 }
 # +---------------------------------------------------+
@@ -381,6 +506,7 @@ function checkip()
 # +---------------------------------------------------+
 function randompw()
 {
+  PASSWD=""
   PASSWD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
 }
 # +---------------------------------------------------+
@@ -388,6 +514,7 @@ function randompw()
 # +---------------------------------------------------+
 # Trap CTRL+C, CTRL+Z and quit singles
 # +---------------------------------------------------+
+# TODO TODO TODO TODO ENABLE!
 #trap '' SIGINT SIGQUIT SIGTSTP
 # +---------------------------------------------------+
 
@@ -437,9 +564,10 @@ if [ ! -e /etc/EFA-Configured ]
    func_ask-gateway
    func_ask-dns1
    func_ask-dns2
+   func_ask-password
    func_verify-settings
    func_configure-system
-   #func_end
+   func_end
  else
    echo -e "$red         ERROR: EFA is already configured $clean"
    echo -e "$red         Please use EFA-Configure $clean"

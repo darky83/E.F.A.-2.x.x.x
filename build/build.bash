@@ -1,6 +1,6 @@
 #!/bin/bash
 # +--------------------------------------------------------------------+
-# EFA 2.0.0.1 build script version 20130811
+# EFA 2.0.0.1 build script version 20130812
 # +--------------------------------------------------------------------+
 # Copyright (C) 2012~2013  http://www.efa-project.org
 #
@@ -29,7 +29,7 @@
 #     swap		( 1GB)
 # - Set /tmp "noexec,nosuid" in /etc/fstab
 # - Configure IP settings
-# - Create user efaadmin
+# - Create user efaadmin with password EfaPr0j3ct
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
@@ -169,7 +169,7 @@ func_efarequirements () {
   echo "First time login: efaadmin/EfaPr0j3ct" >> /etc/issue
 
   # Set EFA-Init to run at first root login:
-  sed -i '1i\sudo \/usr\/local\/sbin\/EFA-Init' /home/efaadmin/.bashrc
+  sed -i '1i\sudo logsave \/var\/EFA\/EFA-Init.log \/usr\/local\/sbin\/EFA-Init' /home/efaadmin/.bashrc
 
   # Monthly check for update
   cd /etc/cron.monthly

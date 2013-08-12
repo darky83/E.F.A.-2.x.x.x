@@ -77,7 +77,7 @@ func_disclaimer () {
   echo "or other dealings in the software"
   echo ""
   echo "Use this software at your own risk!"
-
+  echo ""
   pause
 }
 # +---------------------------------------------------+
@@ -391,7 +391,8 @@ func_baruwa_config (){
   mkdir /etc/baruwa
   mv $home/production.ini /etc/baruwa/production.ini
   sed -i -e 's/exim/Debian-exim/' /etc/baruwa/production.ini
-  sed -i "/^#sqlalchemy.url = / c\sqlalchemy.url = postgresql://baruwa:$password@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
+  sed -i -e 's/sqlalchemy.url/#sqlalchemy.url/' /etc/baruwa/production.ini
+  sed -i "72i sqlalchemy.url = postgresql://baruwa:$password@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
   sed -i -e 's:broker.password =:broker.password = '$password':' \
          -e "s:snowy.local:$(hostname):g" \
          -e 's:^#celery.queues:celery.queues:' /etc/baruwa/production.ini
@@ -642,7 +643,13 @@ if [ `whoami` == root ]
 		func_cron
 		func_postconfig
 		func_cleanup
-		#reboot
+		if [ $debug == "1" ]
+			then 
+				echo "All done"
+				exit 1
+			else
+				reboot
+		fi 
 	else
 		echo "[EFA] ERROR: Please become root."
 		exit 0

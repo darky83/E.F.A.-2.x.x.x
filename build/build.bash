@@ -567,6 +567,10 @@ func_postconfig () {
   su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('mailheader','MailHeader','X-EFA:','2','1');\""
   su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('infoheader','InformationHeader','X-EFA-Information:','2','1');\""
   #su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('','','','','1');\""
+  
+  # Set console resolution to 800x600
+  echo "GRUB_GFXPAYLOAD_LINUX=800x600" >> /etc/default/grub
+  update-grub
 }
 # +---------------------------------------------------+
 # Cleanup

@@ -401,7 +401,7 @@ function func_end()
   sed -i "/^First time login: /d" /etc/issue
 
   echo -e "$green[EFA]$clean Removing configure script from root login & set EFA-Configure"
-  sed -i "/^sudo \/usr\/local\/sbin\/EFA-Init/d" /home/efaadmin/.bashrc
+  sed -i "/^sudo logsave \/var\/EFA\/EFA-Init.log \/usr\/local\/sbin\/EFA-Init/d" /home/efaadmin/.bashrc
   sed -i '1i\sudo \/usr\/local\/sbin\/EFA-Configure' /home/efaadmin/.bashrc
   
   touch /etc/EFA-Configured

@@ -68,6 +68,9 @@ func_checkos () {
 # Disclaimer
 # +---------------------------------------------------+
 func_disclaimer () {
+if [ $debug == "1" ]; then
+  echo -e "$red NOTE DEBUG IS ON $clean"
+fi
   echo "Build for E.F.A. v$version"
   echo ""
   echo "The software is provided 'AS IS', without any warranty of any kind."
@@ -202,6 +205,9 @@ EOF
   wget -N $dlurl/EFA/EFA-Monthly-cron
   chmod 700 EFA-Monthly-cron
 
+  # Remove /dev/fd0 from fstab
+  sed -i "/^\/dev\/fd0 /d" /etc/fstab
+  
   if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
@@ -597,6 +603,7 @@ func_postconfig () {
   # Set console resolution to 1024x768
   echo "GRUB_GFXPAYLOAD_LINUX=1024x768" >> /etc/default/grub
   update-grub
+  if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 # Clean-up
@@ -654,6 +661,14 @@ pause(){
 # +---------------------------------------------------+
 # Main logic
 # +---------------------------------------------------+
+red='\E[00;31m'
+green='\E[00;32m'
+yellow='\E[00;33m'
+blue='\E[00;34m'
+magenta='\E[00;35'
+cyan='\E[00;36m'
+clean='\e[00m'
+
 if [ `whoami` == root ]
 	then
 		func_checkos

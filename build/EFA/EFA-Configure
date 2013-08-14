@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # +--------------------------------------------------------------------+
-
+debug="1"
 # +---------------------------------------------------+
 # Display menus
 # +---------------------------------------------------+
@@ -29,17 +29,20 @@ show_menu() {
 			func_echo-header 
 			echo -e "Please select the item you want to modify"
 			echo -e " "
-			echo -e "+- System settings:"
-			echo -e "1) IP settings"
+			echo -e "0)  Logout                              4)  IP Settings"
+			echo -e "1)  Shell                                                    "
+			echo -e "2)  Reboot system                                       "
+			echo -e "3)  Halt system                                           "
 			echo -e ""
-			echo -e "e. Exit"
 			echo -e -n "$green[EFA]$clean : "
 			local choice
 			read choice
 			case $choice in
-					1) opt_ip-settings ;;
-					2) opt_hostname ;;
-					e) exit 0 ;;
+					0) exit && exit  && logout ;;
+					1) exit 0 ;;
+					2) func_reboot ;;
+					3) func_halt ;;
+					4) func_ip-settings ;;
 					*) echo -e "Error \"$choice\" is not an option..." && sleep 2
 			esac
 		done
@@ -49,26 +52,28 @@ show_menu() {
 # +---------------------------------------------------+
 # Option IP_SETTINGS
 # +---------------------------------------------------+
-opt_ip-settings(){
+func_ip-settings(){
 	menu=0
 	ipmenu=1
 	while [ $ipmenu == "1" ]
 		do
 			func_getipsettings
 			func_echo-header
-			echo "Current IP settings for $INTERFACE are:"
-			echo "1) IP:			$IP"
-			echo "2) Netmask:		$NM"
-			echo "3) Gateway:		$GW"
-			echo "4) Primary DNS:		$DNS1"
-			echo "5) Secondary DNS:	$DNS2"
-			echo ""
-			echo "e) Return to main menu"
-			echo ""
-			echo "Note: Network will reset when changing values."
-			echo ""
+			echo -e "Current IP settings for $INTERFACE are:"
+			echo -e "1) IP					:  $IP"
+			echo -e "2) Netmask				:  $NM"
+			echo -e "3) Gateway				:  $GW"
+			echo -e "4) Primary DNS			:  $DNS1"
+			echo -e "5) Secondary DNS		:  $DNS2"
+			echo -e ""
+			echo -e "e) Return to main menu"
+			echo -e ""
+			echo -e "Note: Network will reset when changing values."
+			echo -e ""
+			echo -e "Enter setting you want to change"
+			echo -e -n "$green[EFA]$clean : "
 			local choice
-			read -p "Enter setting you want to change: " choice
+			read choice
 			case $choice in
 				1) 	ipmenu=0
 					echo ""
@@ -121,16 +126,20 @@ function func_getipsettings(){
 	if [ $nrintf -gt 1 ]
 	 then
 		func_echo-header
-		echo "You seem to have multiple network interfaces"
-		echo "Please select the interface you want to configure"
-		echo "The interface names on your machine are:"
+		echo -e "You seem to have multiple network interfaces"
+		echo -e "Please select the interface you want to configure"
+		echo -e "The interface names on your machine are:"
 		for int in $interf
 			do
 				echo " - $int"
 			done
 
-        local choice
-        read -p "Enter the primary interface name: " choice
+		echo -e ""
+		echo -e "Enter the primary interface name:"
+		echo -e ""
+		echo -e -n "$green[EFA]$clean : "
+		local choice
+		read choice
         choice_check=0
         for int in $interf
          do
@@ -139,11 +148,11 @@ function func_getipsettings(){
             choice_check=1
            fi
          done
-
+		 
          # Check if the user typed a interface that exists.
          if [ $choice_check -eq 0 ]
           then
-            echo "ERROR, That interface does not exist."
+            echo -e "$red [EFA] ERROR, That interface does not exist. $clean"
             sleep 2
             func_getipsettings
             return
@@ -227,7 +236,9 @@ func_setipsettings(){
 # +---------------------------------------------------+
 # Trap CTRL+C, CTRL+Z and quit singles
 # +---------------------------------------------------+
-trap '' SIGINT SIGQUIT SIGTSTP
+if [ $debug == "0" ]; then
+    trap '' SIGINT SIGQUIT SIGTSTP
+fi
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
@@ -257,6 +268,59 @@ function checkip(){
 }
 # +---------------------------------------------------+
 
+# +---------------------------------------------------+
+# Reboot function
+# +---------------------------------------------------+
+func_reboot() {
+    menu=0
+	rebootmenu=1
+	while [ $rebootmenu == "1" ]
+		do
+			func_echo-header 
+			echo -e "Are you sure you want to reboot this host?"
+			echo -e ""
+			echo -e "Y)  Yes I am sure"
+			echo -e "N)  No no no take me back!"
+			echo -e ""
+			echo -e -n "$green[EFA]$clean : "
+			local choice
+			read choice
+			case $choice in
+					Y) reboot && exit 0 ;;
+					N) menu=1 && return  ;;
+					n) menu=1 && return  ;;
+					*) echo -e "Error \"$choice\" is not an option..." && sleep 2
+			esac
+		done
+}
+# +---------------------------------------------------+
+
+# +---------------------------------------------------+
+# Halt function
+# +---------------------------------------------------+
+func_halt() {
+    menu=0
+	haltmenu=1
+	while [ $haltmenu == "1" ]
+		do
+			func_echo-header 
+			echo -e "Are you sure you want to halt this host?"
+			echo -e ""
+			echo -e "Y)  Yes I am sure"
+			echo -e "N)  No no no take me back!"
+			echo -e ""
+			echo -e -n "$green[EFA]$clean : "
+			local choice
+			read choice
+			case $choice in
+					Y) shutdown -h now && exit 0 ;;
+					N) menu=1 && return  ;;
+					n) menu=1 && return  ;;
+					*) echo -e "Error \"$choice\" is not an option..." && sleep 2
+			esac
+		done
+}
+# +---------------------------------------------------+
 
 # +---------------------------------------------------+
 # Menu header
@@ -267,6 +331,9 @@ echo -e "--------------------------------------------------------------"
 echo -e "---        Welcome to the EFA Configuration program        ---"
 echo -e "---                http://www.efa-project.org              ---"
 echo -e "--------------------------------------------------------------"
+if [ $debug == "1" ]; then
+  echo -e "$red NOTE DEBUG IS ON $clean"
+fi
 echo ""
 }
 # +---------------------------------------------------+
@@ -291,7 +358,7 @@ if [ `whoami` == root ]
 			show_menu
 		done
 	else
-		echo "$red[EFA] ERROR: Please become root.$clean"
+		echo -e "$red [EFA] ERROR: Please become root.$clean"
 		exit 0
 	fi
 # +---------------------------------------------------+

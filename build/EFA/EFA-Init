@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # +--------------------------------------------------------------------+
-
+debug="0"
 # +---------------------------------------------------+
 # Lets start asking questions.
 # +---------------------------------------------------+
@@ -517,8 +517,9 @@ function randompw()
 # +---------------------------------------------------+
 # Trap CTRL+C, CTRL+Z and quit singles
 # +---------------------------------------------------+
-# TODO TODO TODO TODO ENABLE!
-#trap '' SIGINT SIGQUIT SIGTSTP
+if [ $debug == "0" ]; then
+    trap '' SIGINT SIGQUIT SIGTSTP
+fi
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
@@ -536,6 +537,9 @@ echo -e "--------------------------------------------------------------"
 echo -e "---        Welcome to the EFA Initial Configuration        ---"
 echo -e "---                http://www.efa-project.org              ---"
 echo -e "--------------------------------------------------------------"
+if [ $debug == "1" ]; then
+  echo -e "$red NOTE DEBUG IS ON $clean"
+fi
 echo ""
 }
 

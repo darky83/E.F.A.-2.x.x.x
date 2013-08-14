@@ -358,7 +358,7 @@ function func_configure-system() {
   sed -i "/^sqlalchemy.url = / c\sqlalchemy.url = postgresql://baruwa:$BARUWASQLPASSWORD@127.0.0.1:5432/baruwa" /etc/baruwa/production.ini
   sed -i "/^broker.password = / c\broker.password = $BROKERPASSWORD" /etc/baruwa/production.ini
   sed -i "/^PGSQL_SERVERS = / c\PGSQL_SERVERS = 127.0.0.1::5432/baruwa/baruwa/$BARUWASQLPASSWORD" /etc/exim4/macros.conf
-  sed -i "/^sql_pass = / c\sql_pass = $BARUWASQLPASSWORD" /etc/sphinxsearch/sphinx.conf
+  sed -i "/^    sql_pass = / c\    sql_pass = $BARUWASQLPASSWORD" /etc/sphinxsearch/sphinx.conf
  
   service rabbitmq-server start
   rabbitmqctl add_user baruwa $BROKERPASSWORD
@@ -387,6 +387,9 @@ function func_configure-system() {
   
   echo -e "$green[EFA]$clean - Updating Freshclam"
   freshclam
+  
+  echo -e "$green[EFA]$clean - rotating indexer"
+  indexer --all --rotate
 }
 # +---------------------------------------------------+
 

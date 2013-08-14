@@ -129,9 +129,9 @@ func_prerequirements () {
   echo 'DPkg:Pre-Invoke{"mount -o remount,exec /tmp";};' >> /etc/apt/apt.conf
   echo 'DPkg:Post-Invoke {"mount -o remount /tmp";};' >> /etc/apt/apt.conf
 
-  # Stop unneeded services
-  update-rc.d -f whoopsie remove
-
+  # remove unwanted packages
+  apt-get -y remove --purge landscape-common whoopsie
+  
   # Secure SSH
   sed -i '/^PermitRootLogin/ c\PermitRootLogin no' /etc/ssh/sshd_config
 
@@ -171,6 +171,32 @@ func_efarequirements () {
   # Set EFA-Init to run at first root login:
   sed -i '1i\sudo logsave \/var\/EFA\/EFA-Init.log \/usr\/local\/sbin\/EFA-Init' /home/efaadmin/.bashrc
 
+  # Write ssh banner
+  sed -i "/^#Banner / c\#Banner" /etc/ssh/sshd_config
+  cat > /etc/banner << 'EOF'
+       Welcome to E.F.A. (http://www.efa-project.org)
+
+ Warning!
+
+ THIS IS A PRIVATE COMPUTER SYSTEM. It is for authorized use only.
+ Users (authorized or unauthorized) have no explicit or implicit
+ expectation of privacy.
+
+ Any or all uses of this system and all files on this system may
+ be intercepted, monitored, recorded, copied, audited, inspected,
+ and disclosed to authorized site and law enforcement personnel,
+ as well as authorized officials of other agencies, both domestic
+ and foreign.  By using this system, the user consents to such
+ interception, monitoring, recording, copying, auditing, inspection,
+ and disclosure at the discretion of authorized site personnel.
+
+ Unauthorized or improper use of this system may result in
+ administrative disciplinary action and civil and criminal penalties.
+ By continuing to use this system you indicate your awareness of and
+ consent to these terms and conditions of use.   LOG OFF IMMEDIATELY
+ if you do not agree to the conditions stated in this warning.  
+EOF
+  
   # Monthly check for update
   cd /etc/cron.monthly
   wget -N $dlurl/EFA/EFA-Monthly-cron
@@ -568,27 +594,29 @@ func_postconfig () {
   su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('infoheader','InformationHeader','X-EFA-Information:','2','1');\""
   #su - postgres -c "psql -d baruwa -c\"INSERT INTO configurations (internal,external,value,section,server_id) VALUES('','','','','1');\""
   
-  # Set console resolution to 800x600
-  echo "GRUB_GFXPAYLOAD_LINUX=800x600" >> /etc/default/grub
+  # Set console resolution to 1024x768
+  echo "GRUB_GFXPAYLOAD_LINUX=1024x768" >> /etc/default/grub
   update-grub
 }
 # +---------------------------------------------------+
-# Cleanup
+# Clean-up
 # +---------------------------------------------------+
 func_cleanup () {
   echo "[EFA] Starting Cleanup"
-  # Clean SSH keys (gererate at first boot)
+  # Clean SSH keys (generate at first boot)
   /bin/rm /etc/ssh/ssh_host_*
 
   # Clean network configs
+  rm /etc/resolv.conf
   rm /var/cache/apt/archives/*
   echo "auto lo" > /etc/network/interfaces
   echo "iface lo inet loopback" >> /etc/network/interfaces
   echo " " >> /etc/network/interfaces
   echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
+  echo "nameserver 127.0.0.1" >> /etc/resolv.conf
   echo "nameserver 8.8.8.8" >> /etc/resolv.conf
   echo "nameserver 8.8.4.4" >> /etc/resolv.conf
-  echo "127.0.0.1               localhost efa" > /etc/hosts
+  echo "127.0.0.1               localhost localhost.localdomain" > /etc/hosts
 
   echo "auto eth0" > /etc/network/interfaces.d/eth0
   echo "iface eth0 inet dhcp" >> /etc/network/interfaces.d/eth0

@@ -155,6 +155,8 @@ func_efarequirements () {
   chmod 700 EFA-Configure
   wget -N $dlurl/EFA/EFA-Update
   chmod 700 EFA-Update
+  wget -N $dlurl/EFA/EFA-SA-Update
+  chmod 700 EFA-SA-Update
 
   mkdir $builddir
   mkdir $logdir
@@ -200,10 +202,8 @@ func_efarequirements () {
  if you do not agree to the conditions stated in this warning.  
 EOF
   
-  # Monthly check for update
-  cd /etc/cron.monthly
-  wget -N $dlurl/EFA/EFA-Monthly-cron
-  chmod 700 EFA-Monthly-cron
+
+  
 
   # Remove /dev/fd0 from fstab
   sed -i "/^\/dev\/fd0 /d" /etc/fstab
@@ -352,6 +352,11 @@ func_mailscanner () {
   ln -s /etc/MailScanner/spam.assassin.prefs.conf /etc/mail/spamassassin/mailscanner.cf
   mkdir -p /var/lib/spamassassin/3.003001
 
+  
+  sed -i s/"ENABLED=0"/"ENABLED=1"/ /etc/default/spamassassin
+  cd /etc/mail/spamassassin
+  wget http://www.peregrinehw.com/downloads/SpamAssassin/contrib/KAM.cf
+  
   sed -i 's:/usr/local:/usr/:' /etc/MailScanner/autoupdate/clamav-autoupdate
   sed -i s/"#run_mailscanner"/"run_mailscanner"/ /etc/default/mailscanner
   sed -i s/"\/var\/lock\/MailScanner.off"/"\/var\/lock\/MailScanner\/MailScanner.off"/ /etc/init.d/mailscanner
@@ -546,7 +551,14 @@ func_cron () {
   chmod +x /usr/sbin/update_bad_phishing_sites
   curl $dlurl/cron/update_bad_phishing_emails -o /usr/sbin/update_bad_phishing_emails
   chmod +x /usr/sbin/update_bad_phishing_emails
-if [ $debug == "1" ]; then pause; fi
+  
+  # EFA Specific Cron's
+  curl $dlurl/EFA/EFA-Monthly-cron -o /etc/cron.monthly/EFA-Monthly-cron
+  curl $dlurl/EFA/EFA-Daily-cron -o /etc/cron.daily/EFA-Daily-cron
+  chmod 700 /etc/cron.monthly/EFA-Monthly-cron
+  chmod 700 /etc/cron.daily/EFA-Daily-cron
+  
+  if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
 

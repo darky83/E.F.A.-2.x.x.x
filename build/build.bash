@@ -529,6 +529,9 @@ func_pyzor_razor_dcc () {
   chmod 755 /etc/init.d/DCC
   update-rc.d DCC defaults
   service DCC start
+  
+  # TODO: AWL is dangerous but lets do some preparation. (this should be placed in EFA-Configure eventually so users can enable this manually.
+  #sed -i "s/#loadplugin Mail::SpamAssassin::Plugin::AWL/loadplugin Mail::SpamAssassin::Plugin::AWL/g" /etc/mail/spamassassin/v310.pre
 if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
@@ -615,6 +618,10 @@ func_postconfig () {
   # Set console resolution to 1024x768
   echo "GRUB_GFXPAYLOAD_LINUX=1024x768" >> /etc/default/grub
   update-grub
+  
+  # disable resolvconf the crapy way
+  chmod 000 /sbin/resolvconf
+  
   if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+

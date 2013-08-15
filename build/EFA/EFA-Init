@@ -376,6 +376,7 @@ function func_configure-system() {
   
   
   echo -e "$green[EFA]$clean - Changing exim settings"
+  sed -i "/^smtp_banner = / c\smtp_banner = E.F.A Project $HOSTNAME.$DOMAINNAME \$tod_full" /etc/exim4/exim4.conf
   sed -i "/^dc_other_hostnames=/ c\dc_other_hostnames='$HOSTNAME'" /etc/exim4/update-exim4.conf.conf
   
   echo -e "$green[EFA]$clean - Changing nginx settings"

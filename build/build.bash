@@ -31,19 +31,24 @@
 # - Configure IP settings
 # - Create user efaadmin with password EfaPr0j3ct
 # +---------------------------------------------------+
-
+debug="1"												# Enable/Disable Debug
 # +---------------------------------------------------+
 # Variables
 # +---------------------------------------------------+
 version="2.0.0.1"										# E.F.A. Version
 osv="12.04"												# Required Ubuntu Version
-dlurl="http://dl.efa-project.org/build/$version"		# URL for file downloads
 builddir="/usr/src/EFA"									# E.F.A. Build dir
 logdir="/var/log/EFA"									# E.F.A. Log dir
 home="/home/baruwa"										# Baruwa home
 pythonv="2.7"											# Python version to use
 password="EfaPr0j3ct"									# Default password (should not be changed!)
-debug="1"												# Enable/Disable Debug
+if [ $debug == "1" ]
+  then 
+    dlurl="https://raw.github.com/darky83/E.F.A.-2.x.x.x/master/build/"
+  else
+    dlurl="http://dl.efa-project.org/build/$version"		
+fi
+
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
@@ -52,12 +57,12 @@ debug="1"												# Enable/Disable Debug
 func_checkos () {
   echo "[EFA] Checking Ubuntu Version"
   if [ ! `lsb_release -r -s` == "$osv" ]
-	then
-		echo "[EFA] Error you do not seem to be running Ubuntu $osv."
-		echo "[EFA] Ubuntu ]$osv is required to continue this build."
-		echo "[EFA] Please see http://www.efa-project.org for more info."
-		if [ $debug == "1" ]; then pause; fi
-		exit 0
+    then
+        echo "[EFA] Error you do not seem to be running Ubuntu $osv."
+        echo "[EFA] Ubuntu ]$osv is required to continue this build."
+        echo "[EFA] Please see http://www.efa-project.org for more info."
+        if [ $debug == "1" ]; then pause; fi
+        exit 0
   fi
 
   if [ $debug == "1" ]; then pause; fi
@@ -98,26 +103,26 @@ func_dependencies () {
 
   apt-get update
   apt-get -y install gcc g++ git subversion curl patch sudo apparmor dnsmasq rabbitmq-server \
-	mailscanner exim4-daemon-heavy nginx uwsgi uwsgi-plugin-python razor pyzor libjpeg62-dev \
-	libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig \
-	libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 \
-	libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl \
-	libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl \
-	libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl \
-	libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl \
-	libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl \
-	libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 \
-	liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl \
-	libstring-crc32-perl libdigest-sha-perl python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 \
-	sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox \
-	arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim libconvert-tnef-perl \
-	libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl \
-	libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl \
-	libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl \
-	libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl \
-	libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl \
-	libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
-	
+    mailscanner exim4-daemon-heavy nginx uwsgi uwsgi-plugin-python razor pyzor libjpeg62-dev \
+    libxml2-dev libxslt1-dev cython libpq-dev libfreetype6-dev libldap2-dev libssl-dev swig \
+    libcrack2-dev libgeoip-dev python-dev libsasl2-dev libmysqlclient-dev libcloog-ppl0 \
+    libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential liblocal-lib-perl \
+    libanyevent-perl libaprutil1-dbd-sqlite3 libaprutil1-ldap libart-2.0-2 libauthen-dechpwd-perl \
+    libauthen-passphrase-perl libcap2 libclass-mix-perl libcrypt-des-perl libcrypt-eksblowfish-perl \
+    libcrypt-mysql-perl libcrypt-passwdmd5-perl libcrypt-rijndael-perl libcrypt-unixcrypt-xs-perl \
+    libdata-entropy-perl libdata-float-perl libdata-integer-perl libdbd-mysql-perl libdbd-pg-perl \
+    libdigest-crc-perl libdigest-md4-perl libelf1 libev-perl libhttp-lite-perl liblcms1 liblua5.1-0 \
+    liblzo2-2 libmodule-runtime-perl libnspr4 libnss3 libopts25 libparams-classify-perl libscalar-string-perl \
+    libstring-crc32-perl libdigest-sha-perl python-setuptools python-virtualenv postgresql postgresql-plpython-9.1 \
+    sphinxsearch memcached clamav-daemon clamav-unofficial-sigs  libjs-dojo-core libjs-dojo-dijit libjs-dojo-dojox \
+    arj cabextract expect htop lzop nomarch ntp p7zip ripole tcl8.5 unrar-free zoo vim libconvert-tnef-perl \
+    libdbd-sqlite3-perl libfilesys-df-perl libmailtools-perl libmime-tools-perl libmime-perl libnet-cidr-perl \
+    libsys-syslog-perl libio-stringy-perl libfile-temp-perl libole-storage-lite-perl libarchive-zip-perl \
+    libsys-hostname-long-perl libnet-cidr-lite-perl libhtml-parser-perl libdb-file-lock-perl libnet-dns-perl \
+    libncurses5-dev libdigest-hmac-perl libnet-ip-perl liburi-perl libfile-spec-perl spamassassin libnet-ident-perl \
+    libmail-spf-perl libmail-dkim-perl dnsutils libio-socket-ssl-perl libtest-pod-perl libbusiness-isbn-perl \
+    libdata-dump-perl libinline-perl libnet-dns-resolver-programmable-perl
+    
   if [ $debug == "1" ]; then pause; fi
 }
 # +---------------------------------------------------+
@@ -372,7 +377,7 @@ func_mailscanner () {
   su - postgres -c "psql -d sa_bayes -U sa_user -c \"\i /usr/share/doc/spamassassin/sql/bayes_pg.sql;\""
   su - postgres -c "psql -c\"create user efaadmin superuser;\""
   su - postgres -c "psql -c\"alter user efaadmin password '$password';\""
-	
+    
   service postgresql restart
   if [ $debug == "1" ]; then pause; fi
 }
@@ -433,7 +438,7 @@ func_baruwa_config (){
   sed -i -e 's:broker.password =:broker.password = '$password':' \
          -e "s:snowy.local:$(hostname):g" \
          -e 's:^#celery.queues:celery.queues:' /etc/baruwa/production.ini
-	   
+       
   mkdir -p /var/log/baruwa /var/run/baruwa /var/lib/baruwa/data/{cache,sessions,uploads,templates} /var/lock/baruwa /etc/MailScanner/baruwa/signatures /etc/MailScanner/baruwa/dkim /etc/MailScanner/baruwa/rules /var/lib/baruwa/data/templates/{general,accounts} 
 
   getent group baruwa >/dev/null || addgroup --system baruwa
@@ -689,35 +694,35 @@ cyan='\E[00;36m'
 clean='\e[00m'
 
 if [ `whoami` == root ]
-	then
-		func_checkos
-		func_disclaimer
-		func_dependencies
-		func_prerequirements
-		func_efarequirements
-		func_dnsmasq
-		func_baruwa
-		func_postgresql
-		func_sphinxsearch
-		func_rabbitmq
-		func_mailscanner
-		func_perl
-		func_exim
-		func_baruwa_config
-		func_nginx
-		func_pyzor_razor_dcc
-		func_cron
-		func_postconfig
-		func_cleanup
-		if [ $debug == "1" ]
-			then 
-				echo "All done"
-				exit 1
-			else
-				reboot
-		fi 
-	else
-		echo "[EFA] ERROR: Please become root."
-		exit 0
-	fi
+    then
+        func_checkos
+        func_disclaimer
+        func_dependencies
+        func_prerequirements
+        func_efarequirements
+        func_dnsmasq
+        func_baruwa
+        func_postgresql
+        func_sphinxsearch
+        func_rabbitmq
+        func_mailscanner
+        func_perl
+        func_exim
+        func_baruwa_config
+        func_nginx
+        func_pyzor_razor_dcc
+        func_cron
+        func_postconfig
+        func_cleanup
+        if [ $debug == "1" ]
+            then 
+                echo "All done"
+                exit 1
+            else
+                reboot
+        fi 
+    else
+        echo "[EFA] ERROR: Please become root."
+        exit 0
+    fi
 # +---------------------------------------------------+

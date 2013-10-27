@@ -42,7 +42,7 @@ logdir="/var/log/EFA"									# E.F.A. Log dir
 home="/home/baruwa"										# Baruwa home
 pythonv="2.7"											# Python version to use
 password="EfaPr0j3ct"									# Default password (should not be changed!)
-dlurl="http://dl.efa-project.org/build/$version"		# Download URL
+dlurl="https://raw.github.com/darky83/E.F.A.-2.x.x.x/master/build"		# Download URL
 # +---------------------------------------------------+
 
 # +---------------------------------------------------+
@@ -506,7 +506,7 @@ func_pyzor_razor_dcc () {
   sa-learn --sync
 
   cd $home
-  wget -N $dlurl/DCC/dcc.tar.Z
+  wget -N http://www.rhyolite.com/dcc/source/dcc.tar.Z
   tar xvzf dcc.tar.Z
   cd dcc-1.3.147/
   ./configure

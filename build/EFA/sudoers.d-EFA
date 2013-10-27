@@ -2,5 +2,5 @@ efaadmin ALL=(ALL) ALL
 efaadmin ALL=(ALL) NOPASSWD:    /usr/local/sbin/EFA-Configure *, \
                                 /sbin/logsave *, \
                                 /usr/local/sbin/EFA-Update *, \
-								/sbin/reboot *, \
-								/sbin/shutdown *
+                                /sbin/reboot *, \
+                                /sbin/shutdown *

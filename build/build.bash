@@ -347,7 +347,13 @@ func_mailscanner () {
   wget -N $dlurl/MailScanner/spam.assassin.prefs.conf
   mv *.rules /etc/MailScanner/rules/
   mv *.conf /etc/MailScanner/
-  chmod -R 777 /var/spool/MailScanner/
+  # TODO TODO TODO
+  # Got to see if this work, 777 is a bit to much.... 
+  #chmod -R 777 /var/spool/MailScanner/
+  chown root /var/spool/MailScanner/
+  chown Debian-exim:clamav /var/spool/MailScanner/incoming
+  chown Debian-exim:baruwa /var/spool/MailScanner/quarantine
+  # END TODO
   ln -s /etc/MailScanner/spam.assassin.prefs.conf /etc/mail/spamassassin/mailscanner.cf
   mkdir -p /var/lib/spamassassin/3.003001
 
@@ -433,7 +439,14 @@ func_baruwa_config (){
          -e "s:snowy.local:$(hostname):g" \
          -e 's:^#celery.queues:celery.queues:' /etc/baruwa/production.ini
        
-  mkdir -p /var/log/baruwa /var/run/baruwa /var/lib/baruwa/data/{cache,sessions,uploads,templates} /var/lock/baruwa /etc/MailScanner/baruwa/signatures /etc/MailScanner/baruwa/dkim /etc/MailScanner/baruwa/rules /var/lib/baruwa/data/templates/{general,accounts} 
+  mkdir -p /var/log/baruwa 
+  mkdir -p /var/run/baruwa 
+  mkdir -p /var/lib/baruwa/data/{cache,sessions,uploads,templates} 
+  mkdir -p /var/lock/baruwa 
+  mkdir -p /etc/MailScanner/baruwa/signatures/domains
+  mkdir -p /etc/MailScanner/baruwa/dkim 
+  mkdir -p /etc/MailScanner/baruwa/rules 
+  mkdir -p /var/lib/baruwa/data/templates/{general,accounts} 
 
   getent group baruwa >/dev/null || addgroup --system baruwa
   getent passwd baruwa >/dev/null || adduser --system --ingroup baruwa --home /var/lib/baruwa --no-create-home --gecos "Baruwa user" --disabled-login baruwa
@@ -587,6 +600,9 @@ func_postconfig () {
   #service clamav-daemon restart
   #/usr/sbin/clamav-unofficial-sigs
 
+  usermod -a -G clamav debian-exim
+  usermod -a -g clamav baruwa
+  
   # Modify Baruwa settings.
   cd $home
   mv /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo.png /home/baruwa/px/lib/python2.7/site-packages/baruwa/public/imgs/logo-baruwa.png
